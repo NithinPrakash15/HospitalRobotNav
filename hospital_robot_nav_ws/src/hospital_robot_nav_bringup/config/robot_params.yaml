@@ -1,0 +1,6 @@
+robot_controller_node:
+  ros__parameters:
+    publish_rate_hz: 50.0
+    start_row: 80
+    start_col: 11
+

@@ -1,0 +1,14 @@
+# Plan a path on the hospital occupancy grid
+GridPos start
+GridPos goal
+string planner_name
+string heuristic_name
+---
+bool success
+GridPos[] path
+float32 planning_time_ms
+int32 nodes_expanded
+int32 nodes_generated
+string planner_used
+string status
+

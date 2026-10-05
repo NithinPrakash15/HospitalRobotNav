@@ -1,0 +1,25 @@
+# Environments / generated / heavy artifacts (never versioned)
+stt_env/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+hospital_robot_nav_ws/build/
+hospital_robot_nav_ws/install/
+hospital_robot_nav_ws/log/
+log/
+logs/
+node_modules/
+dist/
+
+# Secrets & keys
+certificates/*.key
+*.pem
+
+# Large model weights (re-downloadable)
+models/
+
+# Runtime databases
+data/*.db-shm
+data/*.db-wal

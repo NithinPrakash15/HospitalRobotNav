@@ -1,0 +1,6 @@
+fleet_coordinator_node:
+  ros__parameters:
+    num_delivery_agents: 2
+    enable_reception: true
+    enable_emergency: true
+

@@ -1,0 +1,6 @@
+obstacle_tracker_node:
+  ros__parameters:
+    # Request a higher update/publish frequency so obstacles are smooth in RViz
+    update_rate: 10.0          # Hz (node may ignore unknown params)
+    publish_rate_hz: 10.0      # alternative common param name
+    continuous: true          # hint for nodes that support continuous movement

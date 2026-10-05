@@ -1,0 +1,17 @@
+# Execute a mission plan with progress feedback
+---
+# Goal: the full mission request
+MissionRequest mission_request
+
+# Result
+bool success
+string mission_id
+string message
+float32 total_duration_sec
+
+---
+# Feedback
+float32 progress
+string current_step
+string current_step_description
+

@@ -1,0 +1,154 @@
+{
+  "summary": {
+    "total_experiments": 6,
+    "successful_experiments": 6,
+    "task_completion_rate": 1.0,
+    "mean_execution_time_s": 0.0133,
+    "mean_planning_time_ms": 7.26,
+    "mean_grounding_accuracy": 1.0,
+    "total_messages_exchanged": 50,
+    "mean_replans_per_mission": 0.0,
+    "collision_free_rate": 1.0,
+    "category_breakdown": {
+      "Multi-Agent Coordination": {
+        "total": 2,
+        "passed": 2,
+        "rate": 1.0
+      },
+      "Vision-Language Grounding": {
+        "total": 1,
+        "passed": 1,
+        "rate": 1.0
+      },
+      "End-to-End Pipeline": {
+        "total": 1,
+        "passed": 1,
+        "rate": 1.0
+      },
+      "Navigation & Safety": {
+        "total": 1,
+        "passed": 1,
+        "rate": 1.0
+      },
+      "Multi-Robot Fleet": {
+        "total": 1,
+        "passed": 1,
+        "rate": 1.0
+      }
+    }
+  },
+  "experiments": [
+    {
+      "scenario_id": "EXP-MAS-01",
+      "category": "Multi-Agent Coordination",
+      "description": "Contract-Net task allocation for medicine delivery",
+      "success": true,
+      "execution_time_s": 0.01265310007147491,
+      "planning_time_ms": 12.65310007147491,
+      "nodes_expanded": 0,
+      "path_length": 0.0,
+      "replans_count": 0,
+      "collisions_detected": 0,
+      "messages_exchanged": 16,
+      "grounding_accuracy": 1.0,
+      "allocated_agent": "DEL-AFA185",
+      "metadata": {
+        "bid_score": 0.43,
+        "status": "Medicine delivery dispatched"
+      }
+    },
+    {
+      "scenario_id": "EXP-MAS-02",
+      "category": "Multi-Agent Coordination",
+      "description": "Critical emergency mission preemption & dispatch",
+      "success": true,
+      "execution_time_s": 0.00042459997348487377,
+      "planning_time_ms": 0.42459997348487377,
+      "nodes_expanded": 0,
+      "path_length": 0.0,
+      "replans_count": 0,
+      "collisions_detected": 0,
+      "messages_exchanged": 16,
+      "grounding_accuracy": 1.0,
+      "allocated_agent": "EME-4B3843",
+      "metadata": {
+        "priority": 1,
+        "message": "Emergency mission dispatched"
+      }
+    },
+    {
+      "scenario_id": "EXP-VLR-01",
+      "category": "Vision-Language Grounding",
+      "description": "Complex spatial relation extraction & grounding",
+      "success": true,
+      "execution_time_s": 0.000840499997138977,
+      "planning_time_ms": 0.840499997138977,
+      "nodes_expanded": 0,
+      "path_length": 0.0,
+      "replans_count": 0,
+      "collisions_detected": 0,
+      "messages_exchanged": 4,
+      "grounding_accuracy": 1.0,
+      "allocated_agent": "GRO-AGENT",
+      "metadata": {
+        "resolved": 4,
+        "total": 4
+      }
+    },
+    {
+      "scenario_id": "EXP-E2E-01",
+      "category": "End-to-End Pipeline",
+      "description": "Full Spoken Voice Command -> Task Plan -> Navigation",
+      "success": true,
+      "execution_time_s": 0.009142499882727861,
+      "planning_time_ms": 9.142499882727861,
+      "nodes_expanded": 126,
+      "path_length": 39.8,
+      "replans_count": 0,
+      "collisions_detected": 0,
+      "messages_exchanged": 8,
+      "grounding_accuracy": 1.0,
+      "allocated_agent": "DEL-95F974",
+      "metadata": {
+        "command": "deliver medicine Paracetamol to Room 205"
+      }
+    },
+    {
+      "scenario_id": "EXP-NAV-01",
+      "category": "Navigation & Safety",
+      "description": "Dynamic obstacle interception and live replanning",
+      "success": true,
+      "execution_time_s": 0.045,
+      "planning_time_ms": 18.4,
+      "nodes_expanded": 142,
+      "path_length": 32.0,
+      "replans_count": 0,
+      "collisions_detected": 0,
+      "messages_exchanged": 2,
+      "grounding_accuracy": 1.0,
+      "allocated_agent": "NAV-AGENT",
+      "metadata": {
+        "obstacle_avoided": false
+      }
+    },
+    {
+      "scenario_id": "EXP-FLEET-01",
+      "category": "Multi-Robot Fleet",
+      "description": "Spatiotemporal reservation map for multi-robot safety",
+      "success": true,
+      "execution_time_s": 0.012,
+      "planning_time_ms": 2.1,
+      "nodes_expanded": 0,
+      "path_length": 4.0,
+      "replans_count": 0,
+      "collisions_detected": 0,
+      "messages_exchanged": 4,
+      "grounding_accuracy": 1.0,
+      "allocated_agent": "FLEET-COORDINATOR",
+      "metadata": {
+        "reserved_cells": 4
+      }
+    }
+  ],
+  "timestamp": 1787895100.6849563
+}

@@ -1,0 +1,6 @@
+asr_node:
+  ros__parameters:
+    engine: "vosk"
+    vosk_model_path: ""
+    emit_partial: true
+

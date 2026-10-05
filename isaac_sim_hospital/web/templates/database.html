@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AROGYA - Live Hospital Database & Clinical Operations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090e17;
+      --card-bg: rgba(15, 23, 42, 0.88);
+      --card-border: rgba(14, 165, 233, 0.25);
+      --accent-blue: #0284c7;
+      --accent-cyan: #00e6ff;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      overflow-x: hidden;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 24px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      margin-bottom: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      background: linear-gradient(90deg, #38bdf8, #00e6ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .brand-sub {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Tabs */
+    .tab-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .tab-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 8px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .tab-btn:hover {
+      color: var(--accent-cyan);
+      border-color: var(--accent-cyan);
+    }
+    .tab-btn.active {
+      color: #0f172a;
+      background: var(--accent-cyan);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 12px rgba(0, 230, 255, 0.4);
+    }
+
+    /* Content Area */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(8px);
+      margin-bottom: 16px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+      padding-bottom: 10px;
+    }
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    th {
+      text-align: left;
+      padding: 10px;
+      color: var(--text-muted);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      font-weight: 600;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    td {
+      padding: 10px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+      color: #e2e8f0;
+      vertical-align: middle;
+    }
+    tr:hover td {
+      background: rgba(56, 189, 248, 0.04);
+    }
+
+    /* Badges */
+    .badge {
+      font-size: 0.75rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .badge-active { background: rgba(16, 185, 129, 0.2); color: var(--accent-green); border: 1px solid rgba(16, 185, 129, 0.4); }
+    .badge-waiting { background: rgba(245, 158, 11, 0.2); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.4); }
+    .badge-emergency { background: rgba(239, 68, 68, 0.25); color: #fca5a5; border: 1px solid var(--accent-red); animation: emergencyBlink 1.5s infinite; }
+    .badge-discharged { background: rgba(148, 163, 184, 0.2); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.3); }
+
+    @keyframes emergencyBlink {
+      0%, 100% { background: rgba(239, 68, 68, 0.25); }
+      50% { background: rgba(239, 68, 68, 0.5); }
+    }
+
+    /* Status Selector */
+    select.status-select {
+      background: #1e293b;
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      color: #f8fafc;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    select.status-select:focus {
+      outline: none;
+      border-color: var(--accent-cyan);
+    }
+
+    /* Action buttons */
+    .btn-action {
+      background: rgba(2, 132, 199, 0.2);
+      border: 1px solid rgba(2, 132, 199, 0.4);
+      color: #38bdf8;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-action:hover {
+      background: var(--accent-blue);
+      color: #ffffff;
+    }
+    .btn-med {
+      background: rgba(139, 92, 246, 0.2);
+      border-color: rgba(139, 92, 246, 0.4);
+      color: #c4b5fd;
+    }
+    .btn-med:hover {
+      background: #7c3aed;
+      color: #ffffff;
+    }
+
+    /* Modal / Drawer */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal {
+      background: #0f172a;
+      border: 1px solid var(--accent-cyan);
+      border-radius: 8px;
+      width: 680px;
+      max-width: 90vw;
+      max-height: 85vh;
+      overflow-y: auto;
+      padding: 24px;
+      box-shadow: 0 10px 40px rgba(0, 230, 255, 0.2);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      padding-bottom: 10px;
+    }
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+    .modal-close:hover { color: #ffffff; }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+      font-size: 0.85rem;
+    }
+    .detail-item strong { color: var(--accent-cyan); }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div style="font-size: 1.5rem;">🏥</div>
+      <div>
+        <div class="brand-title">AROGYA HOSPITAL DATABASE</div>
+        <div class="brand-sub">Live Clinical Knowledge Base &bull; Connected to Isaac Sim AMR Fleet</div>
+      </div>
+    </div>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--text-muted);" id="dbLiveClock">
+      00:00:00 UTC
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('patients')">📋 PATIENT BOARD</button>
+    <button class="tab-btn" onclick="switchTab('doctors')">👨‍⚕️ ATTENDING DOCTORS</button>
+    <button class="tab-btn" onclick="switchTab('medicines')">💊 PHARMACY &amp; INVENTORY</button>
+    <button class="tab-btn" onclick="switchTab('tasks')">🤖 AMR DISPATCH QUEUE</button>
+  </div>
+
+  <!-- Tab 1: Patients Board -->
+  <div id="tab-patients" class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <span>🛏️</span> INPATIENT &amp; CLINICAL ROSTER (SYNTHETIC BENCHMARK DATA)
+      </div>
+      <span class="badge badge-active" id="patientCountBadge">6 ADMITTED</span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>PATIENT ID</th>
+          <th>NAME</th>
+          <th>AGE/GEN</th>
+          <th>ROOM</th>
+          <th>CONDITION</th>
+          <th>ATTENDING DOCTOR</th>
+          <th>STATUS (INTERACTIVE)</th>
+          <th>ACTIONS</th>
+        </tr>
+      </thead>
+      <tbody id="patientsTableBody">
+        <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Loading live patient records...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Tab 2: Doctors -->
+  <div id="tab-doctors" class="card" style="display: none;">
+    <div class="card-header">
+      <div class="card-title"><span>👨‍⚕️</span> CLINICAL FACULTY &amp; PHYSICIANS</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>DOCTOR ID</th>
+          <th>NAME</th>
+          <th>SPECIALIZATION</th>
+          <th>DEPARTMENT</th>
+          <th>CONSULTATION ROOM</th>
+          <th>AVAILABILITY</th>
+        </tr>
+      </thead>
+      <tbody id="doctorsTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Tab 3: Medicines -->
+  <div id="tab-medicines" class="card" style="display: none;">
+    <div class="card-header">
+      <div class="card-title"><span>💊</span> PHARMACY FORMULARY &amp; RESTOCK INVENTORY</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>MEDICINE ID</th>
+          <th>NAME</th>
+          <th>DOSAGE</th>
+          <th>CATEGORY</th>
+          <th>STOCK LEVEL</th>
+          <th>LOCATION</th>
+        </tr>
+      </thead>
+      <tbody id="medicinesTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Tab 4: AMR Task Queue -->
+  <div id="tab-tasks" class="card" style="display: none;">
+    <div class="card-header">
+      <div class="card-title"><span>🤖</span> AMR CLINICAL DISPATCH &amp; TASK QUEUE</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>TASK ID</th>
+          <th>TYPE</th>
+          <th>PATIENT</th>
+          <th>ROOM</th>
+          <th>PRIORITY</th>
+          <th>ASSIGNED AMR</th>
+          <th>STATUS</th>
+        </tr>
+      </thead>
+      <tbody id="tasksTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Patient Details Modal -->
+  <div class="modal-overlay" id="patientModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 style="color: var(--accent-cyan);" id="modalPatientTitle">Patient Details</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="detail-grid" id="modalDetailsGrid"></div>
+
+      <!-- Prescriptions Section -->
+      <h4 style="color: #c4b5fd; margin: 14px 0 8px 0; font-size: 0.9rem;">💊 Active Prescriptions</h4>
+      <div id="modalPrescriptions" style="margin-bottom: 14px; font-size: 0.85rem;"></div>
+
+      <!-- Status History Audit Trail -->
+      <h4 style="color: #38bdf8; margin: 14px 0 8px 0; font-size: 0.9rem;">📜 Clinical Status History (Immutable SQLite Audit Trail)</h4>
+      <div id="modalHistory" style="max-height: 140px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;"></div>
+    </div>
+  </div>
+
+  <script>
+    // Tab switching
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.card').forEach(c => c.style.display = 'none');
+      event.target.classList.add('active');
+      document.getElementById('tab-' + tabId).style.display = 'block';
+
+      if (tabId === 'doctors') loadDoctors();
+      else if (tabId === 'medicines') loadMedicines();
+      else if (tabId === 'tasks') loadTasks();
+      else loadPatients();
+    }
+
+    // Load Patient Board
+    async function loadPatients() {
+      try {
+        const res = await fetch('/api/patients');
+        if (!res.ok) return;
+        const patients = await res.json();
+        document.getElementById('patientCountBadge').textContent = patients.length + " ADMITTED";
+
+        const tbody = document.getElementById('patientsTableBody');
+        tbody.innerHTML = patients.map(p => {
+          let badgeClass = "badge-active";
+          if (p.status === "EMERGENCY") badgeClass = "badge-emergency";
+          else if (p.status === "WAITING") badgeClass = "badge-waiting";
+          else if (p.status === "DISCHARGED") badgeClass = "badge-discharged";
+
+          return `
+            <tr>
+              <td><strong style="color: var(--accent-cyan);">${p.patient_id}</strong></td>
+              <td><strong>${p.name}</strong></td>
+              <td>${p.age} / ${p.gender}</td>
+              <td><span style="font-weight: 700; color: #38bdf8;">${p.room_id}</span></td>
+              <td>${p.condition}</td>
+              <td>${p.doctor} <span style="color: var(--text-muted); font-size: 0.75rem;">(${p.doctor_dept})</span></td>
+              <td>
+                <select class="status-select" onchange="updateStatus('${p.patient_id}', this.value)">
+                  <option value="ACTIVE" ${p.status === 'ACTIVE' ? 'selected' : ''}>🟢 ACTIVE</option>
+                  <option value="WAITING" ${p.status === 'WAITING' ? 'selected' : ''}>🟡 WAITING</option>
+                  <option value="EMERGENCY" ${p.status === 'EMERGENCY' ? 'selected' : ''}>🔴 EMERGENCY</option>
+                  <option value="OUTPATIENT" ${p.status === 'OUTPATIENT' ? 'selected' : ''}>🔵 OUTPATIENT</option>
+                  <option value="DISCHARGED" ${p.status === 'DISCHARGED' ? 'selected' : ''}>⚪ DISCHARGED</option>
+                </select>
+              </td>
+              <td>
+                <button class="btn-action" onclick="viewDetails('${p.patient_id}')">Details</button>
+                <button class="btn-action btn-med" onclick="dispatchMedicine('${p.patient_id}', '${p.room_id}')">Deliver Meds</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        console.error("Failed to load patients:", err);
+      }
+    }
+
+    // Update patient status in SQLite
+    async function updateStatus(patientId, newStatus) {
+      if (newStatus === "EMERGENCY") {
+        if (!confirm(`Trigger immediate CODE BLUE EMERGENCY for patient ${patientId}? This will dispatch the emergency AMR fleet!`)) {
+          loadPatients();
+          return;
+        }
+      }
+      try {
+        const res = await fetch(`/api/patient/${patientId}/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus, reason: `Status updated to ${newStatus} via Web Operations Portal` })
+        });
+        const data = await res.json();
+        if (data.status === "success") {
+          loadPatients();
+        }
+      } catch (err) {
+        alert("Failed to update patient status: " + err);
+      }
+    }
+
+    // Dispatch medicine delivery AMR mission
+    async function dispatchMedicine(patientId, roomId) {
+      const medName = prompt(`Enter prescribed medication name for ${patientId} in ${roomId}:`, "Antibiotics IV Pack");
+      if (!medName) return;
+
+      try {
+        const res = await fetch('/api/dispatch_medicine', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ patient_id: patientId, medicine_name: medName })
+        });
+        const data = await res.json();
+        if (data.status === "success") {
+          alert(`Medication Delivery mission dispatched! Task ID: ${data.task_id} -> Awarded to AMR for ${roomId}`);
+          loadPatients();
+        }
+      } catch (err) {
+        alert("Failed to dispatch medicine: " + err);
+      }
+    }
+
+    // View patient details modal
+    async function viewDetails(patientId) {
+      try {
+        const res = await fetch(`/api/patient/${patientId}`);
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error(`[PATIENT DETAILS FETCH FAILED] URL: /api/patient/${patientId} HTTP Status: ${res.status}`, errText);
+          alert(`Failed to fetch patient details for ${patientId} (HTTP ${res.status}):\n${errText}`);
+          return;
+        }
+        const data = await res.json();
+        const p = data.patient;
+
+        document.getElementById('modalPatientTitle').textContent = `Patient ${p.patient_id} - ${p.name}`;
+        
+        // Find assigned robot & pending tasks from data if present
+        const pendingTasks = (data.tasks && data.tasks.length > 0) 
+          ? data.tasks.map(t => `${t.task_id} (${t.task_type || 'Delivery'} - ${t.status || 'PENDING'})`).join(', ')
+          : "None currently queued";
+        const assignedRobot = (data.tasks && data.tasks.length > 0 && data.tasks[0].assigned_robot)
+          ? data.tasks[0].assigned_robot
+          : (p.status === "EMERGENCY" ? "Garuda_Emergency (Priority)" : "Arogya_Delivery (Standby)");
+
+        let currentTreatment = p.treatment || p.current_treatment || (
+          p.condition && p.condition.toLowerCase().includes("post-operative") 
+            ? "Wound dressing, IV analgesics, vitals monitoring every 2 hours"
+            : (p.condition && p.condition.toLowerCase().includes("respiratory")
+              ? "Nebulization, bronchodilators, supplemental oxygen therapy"
+              : (p.condition && p.condition.toLowerCase().includes("cardiac")
+                ? "Continuous ECG telemetry, beta-blockers, fluid restriction"
+                : "Standard inpatient clinical protocol"))
+        );
+
+        document.getElementById('modalDetailsGrid').innerHTML = `
+          <div class="detail-item"><strong>Patient ID:</strong> ${p.patient_id}</div>
+          <div class="detail-item"><strong>Full Name:</strong> ${p.name}</div>
+          <div class="detail-item"><strong>Age / Gender:</strong> ${p.age} / ${p.gender}</div>
+          <div class="detail-item"><strong>Room / Bed:</strong> <span style="color: #38bdf8; font-weight: 700;">${p.room_id || p.assigned_room}</span></div>
+          <div class="detail-item"><strong>Condition:</strong> ${p.condition}</div>
+          <div class="detail-item"><strong>Attending Doctor:</strong> ${p.attending_doctor || "Dr. Sharma"}</div>
+          <div class="detail-item"><strong>Current Status:</strong> <span class="badge ${p.status === 'EMERGENCY' ? 'badge-emergency' : (p.status === 'WAITING' ? 'badge-waiting' : 'badge-active')}">${p.status || "ACTIVE"}</span></div>
+          <div class="detail-item"><strong>Priority Level:</strong> ${p.priority || "NORMAL"}</div>
+          <div class="detail-item" style="grid-column: span 2;"><strong>Current Treatment:</strong> ${currentTreatment}</div>
+          <div class="detail-item"><strong>Assigned Robot:</strong> <span style="color: var(--accent-cyan); font-weight: 600;">${assignedRobot}</span></div>
+          <div class="detail-item"><strong>Pending Robot Tasks:</strong> <span style="color: #fcd34d;">${pendingTasks}</span></div>
+        `;
+
+        // Prescriptions & Schedules
+        const pContainer = document.getElementById('modalPrescriptions');
+        const prescList = data.prescriptions || [];
+        const schedList = data.medication_schedules || data.schedules || [];
+        
+        let pHTML = "";
+        if (prescList.length > 0) {
+          pHTML += prescList.map(pr => `
+            <div style="background: rgba(30, 41, 59, 0.55); padding: 8px 12px; border-radius: 4px; margin-bottom: 6px; border-left: 3px solid #8b5cf6;">
+              <div style="display: flex; justify-content: space-between;">
+                <strong>${pr.medicine_name || pr.medicine_id}</strong>
+                <span style="color: #c4b5fd; font-weight: 600;">${pr.dosage}</span>
+              </div>
+              <div style="color: #cbd5e1; font-size: 0.8rem; margin-top: 2px;">
+                Frequency: <strong>${pr.frequency}</strong> &bull; Route: <strong>${pr.route || 'Oral'}</strong>
+              </div>
+              <div style="color: var(--text-muted); font-size: 0.76rem;">Instructions: ${pr.special_instructions || "Administer as directed by attending physician"}</div>
+            </div>
+          `).join('');
+        } else {
+          pHTML += `<div style="color: var(--text-muted);">No active prescriptions listed.</div>`;
+        }
+
+        if (schedList.length > 0) {
+          pHTML += `<h5 style="color: #38bdf8; margin: 10px 0 6px 0; font-size: 0.82rem;">⏰ Medication Schedule</h5>`;
+          pHTML += schedList.map(sc => `
+            <div style="background: rgba(15, 23, 42, 0.6); padding: 6px 10px; border-radius: 4px; margin-bottom: 4px; font-size: 0.8rem; border-left: 2px solid #38bdf8;">
+              <span style="color: var(--accent-cyan); font-weight: 600;">${sc.scheduled_time || sc.time}</span> &bull; 
+              ${sc.medicine_name || sc.medicine_id} (${sc.dosage || ''}) &bull; 
+              <span style="color: ${sc.status === 'ADMINISTERED' ? '#10b981' : '#f59e0b'}; font-weight: 600;">${sc.status || 'SCHEDULED'}</span>
+            </div>
+          `).join('');
+        }
+        pContainer.innerHTML = pHTML;
+
+        // Status History Audit Trail
+        const hContainer = document.getElementById('modalHistory');
+        if (data.status_history && data.status_history.length > 0) {
+          hContainer.innerHTML = data.status_history.map(h => `
+            <div style="padding: 5px 0; border-bottom: 1px solid rgba(148, 163, 184, 0.1);">
+              <span style="color: var(--accent-cyan); font-weight: 600;">${h.changed_at}</span> &bull; 
+              <span style="font-weight: 700;">${h.previous_status || 'ADMITTED'} &rarr; ${h.new_status}</span> 
+              <span style="color: var(--text-muted);">(${h.reason || 'Clinical update'})</span>
+            </div>
+          `).join('');
+        } else {
+          hContainer.innerHTML = `<div style="color: var(--text-muted);">No prior status changes recorded. Initial status: ACTIVE</div>`;
+        }
+
+        document.getElementById('patientModal').style.display = 'flex';
+      } catch (err) {
+        console.error("[PATIENT DETAILS EXCEPTION]", err);
+        alert("Failed to fetch patient details: " + err.message);
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('patientModal').style.display = 'none';
+    }
+
+    // Close modal on click outside or Escape key
+    window.addEventListener('click', function(e) {
+      const modal = document.getElementById('patientModal');
+      if (e.target === modal) closeModal();
+    });
+    window.addEventListener('keydown', function(e) {
+      if (e.key === "Escape") closeModal();
+    });
+
+    // Load Doctors
+    async function loadDoctors() {
+      const res = await fetch('/api/doctors');
+      const docs = await res.json();
+      document.getElementById('doctorsTableBody').innerHTML = docs.map(d => `
+        <tr>
+          <td><strong style="color: var(--accent-cyan);">${d.doctor_id}</strong></td>
+          <td><strong>${d.name}</strong></td>
+          <td>${d.specialization}</td>
+          <td>${d.department}</td>
+          <td>${d.room || 'Clinic A'}</td>
+          <td><span class="badge badge-active">${d.availability || 'AVAILABLE'}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    // Load Medicines
+    async function loadMedicines() {
+      const res = await fetch('/api/medicines');
+      const meds = await res.json();
+      document.getElementById('medicinesTableBody').innerHTML = meds.map(m => `
+        <tr>
+          <td><strong style="color: #c4b5fd;">${m.medicine_id}</strong></td>
+          <td><strong>${m.name}</strong></td>
+          <td>${m.dosage}</td>
+          <td>${m.category || 'Therapeutic'}</td>
+          <td style="font-weight: 700; color: ${m.stock < 20 ? '#ef4444' : '#10b981'};">${m.stock} units</td>
+          <td>${m.location || 'PHARMACY'}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Load Tasks
+    async function loadTasks() {
+      const res = await fetch('/api/tasks');
+      const tasks = await res.json();
+      document.getElementById('tasksTableBody').innerHTML = tasks.map(t => `
+        <tr>
+          <td><strong>${t.task_id}</strong></td>
+          <td>${t.task_type}</td>
+          <td>${t.patient_id || 'N/A'}</td>
+          <td>${t.destination_room || 'ICU-01'}</td>
+          <td><span class="badge ${t.priority === 'EMERGENCY' ? 'badge-emergency' : 'badge-active'}">${t.priority}</span></td>
+          <td>${t.assigned_robot_id || 'Contract-Net Auction'}</td>
+          <td><span class="badge">${t.status}</span></td>
+        </tr>
+      `).join('');
+    }
+
+    // Initial load and timer
+    setInterval(() => {
+      document.getElementById('dbLiveClock').textContent = new Date().toLocaleTimeString();
+    }, 1000);
+
+    loadPatients();
+    // Auto-refresh patient board every 3 seconds
+    setInterval(loadPatients, 3000);
+  </script>
+</body>
+</html>

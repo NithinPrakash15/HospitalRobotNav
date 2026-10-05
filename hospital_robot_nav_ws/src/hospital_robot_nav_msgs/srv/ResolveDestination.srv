@@ -1,0 +1,8 @@
+# Resolve a natural-language destination to grid coordinates
+string query
+---
+GridPos position
+bool found
+string room_id
+string label
+

@@ -1,0 +1,1819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#090d16">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>AROGYA Mobile Voice Command Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --surface: #0f172a;
+      --surface-card: #131d35;
+      --surface-border: #1e293b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --primary: #0284c7;
+      --primary-glow: #38bdf8;
+      --success: #10b981;
+      --success-glow: #34d399;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --danger-glow: #f87171;
+      --purple: #8b5cf6;
+      --cyan: #06b6d4;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    }
+
+    header {
+      padding: 16px 20px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--surface-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .brand-title {
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #fff;
+    }
+
+    .brand-subtitle {
+      font-size: 10px;
+      color: var(--cyan);
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--surface-border);
+      transition: all 0.3s ease;
+    }
+
+    .status-badge.connected {
+      color: var(--success-glow);
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.12);
+    }
+
+    .status-badge.connecting {
+      color: var(--warning);
+      border-color: rgba(245, 158, 11, 0.4);
+      background: rgba(245, 158, 11, 0.12);
+    }
+
+    .status-badge.disconnected {
+      color: var(--danger-glow);
+      border-color: rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.12);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .status-badge.connected .status-dot {
+      box-shadow: 0 0 8px var(--success);
+      animation: pulse-dot 2s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    main {
+      flex: 1;
+      padding: 16px;
+      max-width: 500px;
+      margin: 0 auto;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Mode Selector */
+    .mode-bar {
+      display: flex;
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 4px;
+      border: 1px solid var(--surface-border);
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 9px 12px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: center;
+    }
+
+    .mode-btn.active {
+      background: var(--surface-card);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    /* Primary Mic Controller */
+    .mic-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      background: linear-gradient(180deg, rgba(19, 29, 53, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+      border: 1px solid var(--surface-border);
+      border-radius: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mic-button-wrapper {
+      position: relative;
+      margin: 10px 0 16px 0;
+      width: 140px;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pulse-ring {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 2px solid var(--danger-glow);
+      opacity: 0;
+      pointer-events: none;
+      transform: scale(0.9);
+    }
+
+    .mic-button-wrapper.listening .pulse-ring:nth-child(1) {
+      animation: pulse-ring 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+    .mic-button-wrapper.listening .pulse-ring:nth-child(2) {
+      animation: pulse-ring 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) 0.6s infinite;
+    }
+
+    @keyframes pulse-ring {
+      0% { transform: scale(0.9); opacity: 0.8; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+
+    .mic-btn {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      border: 3px solid rgba(56, 189, 248, 0.4);
+      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+      color: white;
+      font-size: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 8px 30px rgba(2, 132, 199, 0.4), inset 0 2px 4px rgba(255, 255, 255, 0.2);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      z-index: 2;
+    }
+
+    .mic-btn:active {
+      transform: scale(0.93);
+    }
+
+    .mic-button-wrapper.listening .mic-btn {
+      background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+      border-color: rgba(248, 113, 113, 0.8);
+      box-shadow: 0 0 35px rgba(239, 68, 68, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.3);
+      animation: mic-glow 1.2s ease-in-out infinite alternate;
+    }
+
+    @keyframes mic-glow {
+      from { transform: scale(1); }
+      to { transform: scale(1.05); }
+    }
+
+    .mic-button-wrapper.processing .mic-btn {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      border-color: rgba(245, 158, 11, 0.8);
+      box-shadow: 0 0 30px rgba(245, 158, 11, 0.5);
+    }
+
+    .mic-state-label {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--text-main);
+      margin-top: 4px;
+      text-transform: uppercase;
+    }
+
+    .mic-subtext {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    /* Warning / Permission Alert */
+    .alert-banner {
+      display: none;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 12px;
+      line-height: 1.4;
+      align-items: center;
+      gap: 10px;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+
+    .alert-banner.show {
+      display: flex;
+    }
+
+    /* Live Transcript Display */
+    .section-card {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--cyan);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Real-Time Audio Level Meter */
+    .audio-meter-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      margin-top: 8px;
+      color: var(--text-dim);
+    }
+
+    .meter-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+
+    .meter-bars {
+      font-size: 14px;
+      letter-spacing: 2px;
+      color: var(--cyan);
+      transition: color 0.1s ease;
+      font-weight: 700;
+    }
+
+    .meter-bars.active {
+      color: var(--success-glow);
+      text-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+    }
+
+    .meter-bars.peak {
+      color: var(--warning);
+      text-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+    }
+
+    .meter-db {
+      font-size: 10px;
+      min-width: 48px;
+      text-align: right;
+      color: var(--text-muted);
+    }
+
+    /* Dual-Channel Speech Recognition Container */
+    .transcript-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .transcript-channel {
+      background: #060913;
+      border: 1px solid rgba(30, 41, 59, 0.8);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.4;
+      word-break: break-word;
+      transition: all 0.2s ease;
+    }
+
+    .transcript-channel.live-channel {
+      border-left: 3px solid var(--warning);
+      background: rgba(245, 158, 11, 0.03);
+    }
+
+    .transcript-channel.final-channel {
+      border-left: 3px solid var(--success);
+      background: rgba(16, 185, 129, 0.04);
+    }
+
+    .channel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .channel-badge {
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .channel-badge.live {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--warning);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .channel-badge.final {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success-glow);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .channel-sub {
+      font-size: 9px;
+      color: var(--text-dim);
+    }
+
+    .channel-body {
+      font-size: 13px;
+      color: #e2e8f0;
+      line-height: 1.5;
+    }
+
+    .channel-body.empty {
+      color: var(--text-dim);
+      font-style: italic;
+    }
+
+    .transcript-box {
+      min-height: 50px;
+      background: #060913;
+      border: 1px solid rgba(30, 41, 59, 0.8);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #e2e8f0;
+      word-break: break-word;
+      transition: all 0.2s ease;
+    }
+
+    .transcript-box.empty {
+      color: var(--text-dim);
+      font-style: italic;
+    }
+
+    .transcript-partial {
+      color: #cbd5e1;
+      font-style: italic;
+    }
+
+    .transcript-final {
+      color: #38bdf8;
+      font-weight: 600;
+    }
+
+    /* Mission State Grid */
+    .intel-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .intel-cell {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .intel-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+
+    .intel-val {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .intel-val.highlight {
+      color: var(--primary-glow);
+    }
+    .intel-val.emergency {
+      color: var(--danger-glow);
+    }
+    .intel-val.success {
+      color: var(--success-glow);
+    }
+
+    /* Fleet Telemetry Drawer */
+    .fleet-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .fleet-row::-webkit-scrollbar {
+      display: none;
+    }
+
+    .robot-chip {
+      flex: 0 0 130px;
+      background: #080d1a;
+      border: 1px solid var(--surface-border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: border-color 0.2s ease;
+    }
+
+    .robot-chip.assigned {
+      border-color: var(--primary-glow);
+      background: rgba(2, 132, 199, 0.12);
+    }
+
+    .robot-chip-name {
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .robot-chip-status {
+      font-size: 10px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .battery-bar-wrap {
+      width: 100%;
+      height: 4px;
+      background: #1e293b;
+      border-radius: 2px;
+      margin-top: 4px;
+      overflow: hidden;
+    }
+
+    .battery-bar-fill {
+      height: 100%;
+      background: var(--success);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    /* Command History */
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 160px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      background: #080d1a;
+      border-radius: 8px;
+      font-size: 11px;
+      border-left: 3px solid var(--primary);
+    }
+
+    .history-item.emergency {
+      border-left-color: var(--danger);
+    }
+
+    .history-text {
+      color: #cbd5e1;
+      font-weight: 500;
+      max-width: 65%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .history-meta {
+      color: var(--text-dim);
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Fallback Text Input */
+    .text-input-wrap {
+      display: flex;
+      gap: 8px;
+      margin-top: auto;
+      padding-top: 8px;
+    }
+
+    .cmd-input {
+      flex: 1;
+      background: #0f172a;
+      border: 1px solid var(--surface-border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: #fff;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .cmd-input:focus {
+      border-color: var(--primary-glow);
+    }
+
+    .send-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 0 16px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s ease;
+    }
+
+    .send-btn:active {
+      background: #0369a1;
+    }
+
+    /* Multi-badge Header Ribbon */
+    .header-badges {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .status-badge.secure {
+      color: var(--cyan);
+      border-color: rgba(6, 182, 212, 0.4);
+      background: rgba(6, 182, 212, 0.12);
+    }
+
+    .status-badge.insecure {
+      color: var(--danger-glow);
+      border-color: rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.12);
+    }
+
+    .status-badge.mic-ready {
+      color: var(--success-glow);
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.12);
+    }
+
+    .status-badge.mic-req {
+      color: var(--warning);
+      border-color: rgba(245, 158, 11, 0.4);
+      background: rgba(245, 158, 11, 0.12);
+    }
+
+    .status-badge.mic-denied {
+      color: var(--danger-glow);
+      border-color: rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.12);
+    }
+
+    .status-badge.mic-listen {
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.6);
+      background: rgba(239, 68, 68, 0.2);
+    }
+
+    .status-badge.mic-err {
+      color: var(--danger-glow);
+      border-color: rgba(239, 68, 68, 0.4);
+      background: rgba(239, 68, 68, 0.12);
+    }
+
+    /* Diagnostics Card */
+    .diag-card {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid var(--surface-border);
+      border-radius: 12px;
+      overflow: hidden;
+      font-size: 11px;
+    }
+
+    .diag-header {
+      padding: 10px 14px;
+      background: rgba(19, 29, 53, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.3px;
+    }
+
+    .diag-header:hover {
+      color: var(--text-main);
+    }
+
+    .diag-body {
+      display: none;
+      padding: 10px 14px;
+      flex-direction: column;
+      gap: 6px;
+      background: rgba(10, 15, 30, 0.7);
+      border-top: 1px solid var(--surface-border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+    }
+
+    .diag-body.expanded {
+      display: flex;
+    }
+
+    .diag-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-dim);
+    }
+
+    .diag-val {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .diag-val.ok {
+      color: var(--success);
+    }
+
+    .diag-val.warn {
+      color: var(--warning);
+    }
+
+    .diag-val.err {
+      color: var(--danger-glow);
+    }
+
+    /* Notice tip banner */
+    .cert-tip-banner {
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 11px;
+      line-height: 1.4;
+      background: rgba(6, 182, 212, 0.1);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      color: #a5f3fc;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cert-tip-banner.hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header>
+    <div class="brand-group">
+      <span class="brand-icon">🏥</span>
+      <div>
+        <div class="brand-title">AROGYA</div>
+        <div class="brand-subtitle">Mobile Voice Console</div>
+      </div>
+    </div>
+    <div class="header-badges">
+      <div id="secBadge" class="status-badge secure" title="Connection Security Context">
+        <span class="status-dot"></span>
+        <span id="secText">HTTPS</span>
+      </div>
+      <div id="connBadge" class="status-badge connecting" title="WebSocket Link Status">
+        <span class="status-dot"></span>
+        <span id="connText">CONNECTING...</span>
+      </div>
+      <div id="micBadge" class="status-badge mic-ready" title="Microphone Status">
+        <span class="status-dot"></span>
+        <span id="micBadgeText">MIC: READY</span>
+      </div>
+      <div id="sttBadge" class="status-badge mic-ready" title="faster-whisper STT Service Status">
+        <span class="status-dot"></span>
+        <span id="sttBadgeText">STT: READY</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Local HTTPS Self-Signed Notice Tip -->
+    <div id="certTip" class="cert-tip-banner">
+      <span>🔒</span>
+      <span style="flex:1;"><strong>Local HTTPS:</strong> If your mobile browser prompts <em>"Your connection is not private"</em>, tap <strong>Advanced</strong> &rarr; <strong>Proceed</strong> to unlock microphone permissions.</span>
+      <button onclick="document.getElementById('certTip').classList.add('hidden')" style="background:none; border:none; color:inherit; font-size:14px; cursor:pointer; padding:0 4px;" aria-label="Dismiss">✕</button>
+    </div>
+
+    <!-- Microphone Permission Alert -->
+    <div id="micAlert" class="alert-banner">
+      <span>⚠️</span>
+      <span id="micAlertText">Microphone permission required. Tap Allow when prompted.</span>
+    </div>
+
+    <!-- Mode Selector: Push to Talk vs Wake Word -->
+    <div class="mode-bar">
+      <button id="modeTapBtn" class="mode-btn active" onclick="setMode('tap')">🎙️ Tap to Speak</button>
+      <button id="modeWakeBtn" class="mode-btn" onclick="setMode('wake')">🗣️ Wake Word ("Hey Arogya")</button>
+    </div>
+
+    <!-- Primary Mic Controller Stage -->
+    <div class="mic-stage">
+      <div id="micWrapper" class="mic-button-wrapper" onclick="toggleMicrophone()">
+        <div class="pulse-ring"></div>
+        <div class="pulse-ring"></div>
+        <button id="micBtn" class="mic-btn" aria-label="Microphone">
+          <span id="micIcon">🎙️</span>
+        </button>
+      </div>
+      <div id="micStateLabel" class="mic-state-label">TAP TO SPEAK</div>
+      <div id="micSubtext" class="mic-subtext">Tap and speak a clinical command</div>
+
+      <!-- Real Microphone Audio Level Indicator -->
+      <div class="audio-meter-wrap" id="audioMeterWrap">
+        <span class="meter-label">MIC INPUT:</span>
+        <span class="meter-bars" id="audioMeterBars">▁▁▁▁▁</span>
+        <span class="meter-db" id="audioMeterDb">-∞ dB</span>
+      </div>
+    </div>
+
+    <!-- Phase 5.5: Wake Word Telemetry Card -->
+    <div class="section-card" id="wakeTelemetryCard">
+      <div class="card-header">
+        <span class="card-title">🗣️ Wake Word Telemetry</span>
+        <span id="wakeStatusBadge" class="channel-badge" style="background: rgba(56, 189, 248, 0.15); color: var(--primary-glow); border: 1px solid rgba(56, 189, 248, 0.3);">SLEEPING</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px;">
+        <div><span style="color: var(--text-dim);">STATUS:</span> <strong id="wakeStatusVal" style="color: #fff;">SLEEPING</strong></div>
+        <div><span style="color: var(--text-dim);">CONFIDENCE:</span> <strong id="wakeConfVal" style="color: var(--cyan);">0%</strong></div>
+        <div style="grid-column: span 2;"><span style="color: var(--text-dim);">DETECTED:</span> <strong id="wakeDetectedVal" style="color: var(--primary-glow);">--</strong></div>
+        <div style="grid-column: span 2;"><span style="color: var(--text-dim);">NORMALIZED:</span> <strong id="wakeNormVal" style="color: var(--text-muted);">--</strong></div>
+      </div>
+    </div>
+
+    <!-- Speech Recognition Dual-Channel Console (Live Partial vs Final) -->
+    <div class="section-card">
+      <div class="card-header">
+        <span class="card-title">📝 Speech Recognition</span>
+        <span id="sttEngineLabel" style="font-size: 10px; color: var(--cyan); font-family: 'JetBrains Mono', monospace;">STT: 16 kHz VOSK</span>
+      </div>
+      <div class="transcript-container">
+        <!-- Channel 1: Live Hypothesis -->
+        <div class="transcript-channel live-channel">
+          <div class="channel-header">
+            <span class="channel-badge live">🎤 LIVE HYPOTHESIS</span>
+            <span id="partialStatus" class="channel-sub">Ready</span>
+          </div>
+          <div id="transcriptPartial" class="channel-body empty">
+            Awaiting speech input...
+          </div>
+        </div>
+        <!-- Channel 2: Authoritative Final Transcript -->
+        <div class="transcript-channel final-channel">
+          <div class="channel-header">
+            <span class="channel-badge final">✅ AUTHORITATIVE FINAL</span>
+            <span id="finalTimestamp" class="channel-sub">--:--:--</span>
+          </div>
+          <div id="transcriptFinal" class="channel-body">
+            "Say: Deliver medicine to patient P003"
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Real-Time Mission Intelligence Grid -->
+    <div class="intel-grid">
+      <div class="intel-cell">
+        <span class="intel-label">Intent</span>
+        <span id="intelIntent" class="intel-val highlight">STANDBY</span>
+      </div>
+      <div class="intel-cell">
+        <span class="intel-label">Target / Room</span>
+        <span id="intelTarget" class="intel-val">NONE</span>
+      </div>
+      <div class="intel-cell">
+        <span class="intel-label">Assigned AMR</span>
+        <span id="intelRobot" class="intel-val highlight">GARUDA</span>
+      </div>
+      <div class="intel-cell">
+        <span class="intel-label">Fleet Status</span>
+        <span id="intelStatus" class="intel-val success">IDLE</span>
+      </div>
+    </div>
+
+    <!-- Fleet AMRs Telemetry Row -->
+    <div class="section-card">
+      <div class="card-header">
+        <span class="card-title">🤖 Fleet AMRs</span>
+        <span id="isaacSimOnlineBadge" style="font-size: 10px; color: var(--success); font-weight: 600;">ISAAC SIM ONLINE</span>
+      </div>
+      <div id="fleetRow" class="fleet-row">
+        <!-- Rendered via JS -->
+        <div class="robot-chip assigned" id="chip-Garuda_Emergency">
+          <div class="robot-chip-name">🚨 Garuda</div>
+          <div class="robot-chip-status" id="chip-status-Garuda_Emergency">IDLE (EMR-01)</div>
+          <div class="battery-bar-wrap"><div class="battery-bar-fill" id="chip-bat-Garuda_Emergency" style="width: 100%;"></div></div>
+        </div>
+        <div class="robot-chip" id="chip-Arogya_Delivery">
+          <div class="robot-chip-name">💊 Arogya</div>
+          <div class="robot-chip-status" id="chip-status-Arogya_Delivery">IDLE (CHG-01)</div>
+          <div class="battery-bar-wrap"><div class="battery-bar-fill" id="chip-bat-Arogya_Delivery" style="width: 100%;"></div></div>
+        </div>
+        <div class="robot-chip" id="chip-Mitra_Reception">
+          <div class="robot-chip-name">🧭 Mitra</div>
+          <div class="robot-chip-status" id="chip-status-Mitra_Reception">IDLE (RCT-01)</div>
+          <div class="battery-bar-wrap"><div class="battery-bar-fill" id="chip-bat-Mitra_Reception" style="width: 100%;"></div></div>
+        </div>
+        <div class="robot-chip" id="chip-Sahayak_Support">
+          <div class="robot-chip-name">⚕️ Sahayak</div>
+          <div class="robot-chip-status" id="chip-status-Sahayak_Support">IDLE (GW-01)</div>
+          <div class="battery-bar-wrap"><div class="battery-bar-fill" id="chip-bat-Sahayak_Support" style="width: 100%;"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Command History -->
+    <div class="section-card">
+      <div class="card-header">
+        <span class="card-title">📜 Command History</span>
+        <span id="historyCount" style="font-size: 10px; color: var(--text-dim);">0 commands</span>
+      </div>
+      <div id="historyList" class="history-list">
+        <div style="font-size: 11px; color: var(--text-dim); text-align: center; padding: 12px;">No voice commands executed yet</div>
+      </div>
+    </div>
+
+    <!-- Expandable System & Connection Diagnostics -->
+    <div class="diag-card">
+      <div class="diag-header" onclick="toggleDiagnostics()">
+        <span>🔧 Connection &amp; Device Diagnostics</span>
+        <span id="diagToggleIcon">▼</span>
+      </div>
+      <div id="diagBody" class="diag-body">
+        <div class="diag-row"><span>HTTPS / Protocol:</span><span id="diagHttps" class="diag-val">CHECKING...</span></div>
+        <div class="diag-row"><span>Secure Context:</span><span id="diagSecure" class="diag-val">CHECKING...</span></div>
+        <div class="diag-row"><span>WebSocket:</span><span id="diagWs" class="diag-val">CHECKING...</span></div>
+        <div class="diag-row"><span>MediaDevices API:</span><span id="diagMedia" class="diag-val">CHECKING...</span></div>
+        <div class="diag-row"><span>Microphone API:</span><span id="diagMicApi" class="diag-val">CHECKING...</span></div>
+        <div class="diag-row"><span>Permission State:</span><span id="diagPerm" class="diag-val">CHECKING...</span></div>
+        <div class="diag-row"><span>Audio Stream:</span><span id="diagStream" class="diag-val">INACTIVE</span></div>
+        <div class="diag-row"><span>Hardware Sample Rate:</span><span id="diagHwSr" class="diag-val">--</span></div>
+        <div class="diag-row"><span>Target Resampled SR:</span><span id="diagStreamSr" class="diag-val">16000 Hz Mono</span></div>
+        <div class="diag-row"><span>Audio VAD State:</span><span id="diagVad" class="diag-val">SILENCE</span></div>
+        <div class="diag-row"><span>STT Latency:</span><span id="diagSttLatency" class="diag-val">--</span></div>
+        <div class="diag-row"><span>Audio Frames Sent:</span><span id="diagFrames" class="diag-val">0</span></div>
+      </div>
+    </div>
+
+    <!-- Fallback Text Command Input -->
+    <div class="text-input-wrap">
+      <input type="text" id="cmdInput" class="cmd-input" placeholder="Or type clinical command..." onkeydown="handleInputKey(event)">
+      <button class="send-btn" onclick="sendTextCommand()">Send</button>
+    </div>
+  </main>
+
+  <script>
+    // Configuration & State
+    let ws = null;
+    let wsConnected = false;
+    let currentMode = 'tap'; // 'tap' or 'wake'
+    let isRecording = false;
+    let isProcessing = false;
+    let isStartingCapture = false;
+    let framesSentCount = 0;
+    let audioContext = null;
+    let mediaStream = null;
+    let processorNode = null;
+    let reconnectTimeout = null;
+    let reconnectAttempts = 0;
+    let commandHistory = [];
+    let diagStreamState = 'INACTIVE';
+
+    // UI Elements
+    const secBadge = document.getElementById('secBadge');
+    const secText = document.getElementById('secText');
+    const connBadge = document.getElementById('connBadge');
+    const connText = document.getElementById('connText');
+    const micBadge = document.getElementById('micBadge');
+    const micBadgeText = document.getElementById('micBadgeText');
+    const micWrapper = document.getElementById('micWrapper');
+    const micBtn = document.getElementById('micBtn');
+    const micIcon = document.getElementById('micIcon');
+    const micStateLabel = document.getElementById('micStateLabel');
+    const micSubtext = document.getElementById('micSubtext');
+    const micAlert = document.getElementById('micAlert');
+    const micAlertText = document.getElementById('micAlertText');
+    const transcriptPartial = document.getElementById('transcriptPartial');
+    const transcriptFinal = document.getElementById('transcriptFinal');
+    const partialStatus = document.getElementById('partialStatus');
+    const finalTimestamp = document.getElementById('finalTimestamp');
+    const intelIntent = document.getElementById('intelIntent');
+    const intelTarget = document.getElementById('intelTarget');
+    const intelRobot = document.getElementById('intelRobot');
+    const intelStatus = document.getElementById('intelStatus');
+    const historyList = document.getElementById('historyList');
+    const historyCount = document.getElementById('historyCount');
+    const cmdInput = document.getElementById('cmdInput');
+
+    function toggleDiagnostics() {
+      const body = document.getElementById('diagBody');
+      const icon = document.getElementById('diagToggleIcon');
+      if (body.classList.contains('expanded')) {
+        body.classList.remove('expanded');
+        icon.innerText = '▼';
+      } else {
+        body.classList.add('expanded');
+        icon.innerText = '▲';
+        runDiagnostics();
+      }
+    }
+
+    function updateMicStatus(state, label) {
+      if (!micBadge || !micBadgeText) return;
+      micBadge.className = 'status-badge';
+      if (state === 'ready') {
+        micBadge.classList.add('mic-ready');
+        micBadgeText.innerText = 'MIC: READY';
+      } else if (state === 'required') {
+        micBadge.classList.add('mic-req');
+        micBadgeText.innerText = 'MIC: PERMISSION REQ';
+      } else if (state === 'denied') {
+        micBadge.classList.add('mic-denied');
+        micBadgeText.innerText = 'MIC: PERMISSION BLOCKED';
+      } else if (state === 'listening') {
+        micBadge.classList.add('mic-listen');
+        micBadgeText.innerText = 'MIC: LISTENING';
+      } else if (state === 'insecure') {
+        micBadge.classList.add('mic-err');
+        micBadgeText.innerText = 'MIC: HTTPS REQUIRED';
+      } else {
+        micBadge.classList.add('mic-err');
+        micBadgeText.innerText = `MIC: ${label || 'ERROR'}`;
+      }
+    }
+
+    async function runDiagnostics() {
+      const isHttps = window.location.protocol === 'https:';
+      const isSecure = !!window.isSecureContext;
+      const hasMedia = !!(navigator && navigator.mediaDevices);
+      const hasGetUserMedia = !!(hasMedia && navigator.mediaDevices.getUserMedia);
+
+      // HTTPS / Protocol
+      const elHttps = document.getElementById('diagHttps');
+      if (elHttps) {
+        elHttps.innerText = isHttps ? 'CONNECTED (HTTPS)' : 'INSECURE (HTTP)';
+        elHttps.className = `diag-val ${isHttps ? 'ok' : 'err'}`;
+      }
+      if (secBadge && secText) {
+        if (isHttps) {
+          secBadge.className = 'status-badge secure';
+          secText.innerText = 'HTTPS (SECURE)';
+        } else {
+          secBadge.className = 'status-badge insecure';
+          secText.innerText = 'HTTP (INSECURE)';
+        }
+      }
+
+      // Secure Context
+      const elSecure = document.getElementById('diagSecure');
+      if (elSecure) {
+        elSecure.innerText = isSecure ? 'YES' : 'NO (RESTRICTED)';
+        elSecure.className = `diag-val ${isSecure ? 'ok' : 'err'}`;
+      }
+
+      // WebSocket status
+      const elWs = document.getElementById('diagWs');
+      if (elWs) {
+        const wsProto = isHttps ? 'WSS' : 'WS';
+        elWs.innerText = wsConnected ? `CONNECTED (${wsProto})` : 'DISCONNECTED';
+        elWs.className = `diag-val ${wsConnected ? 'ok' : 'err'}`;
+      }
+
+      // MediaDevices API
+      const elMedia = document.getElementById('diagMedia');
+      if (elMedia) {
+        elMedia.innerText = hasMedia ? 'AVAILABLE' : 'UNAVAILABLE';
+        elMedia.className = `diag-val ${hasMedia ? 'ok' : 'err'}`;
+      }
+
+      // Microphone API
+      const elMicApi = document.getElementById('diagMicApi');
+      if (elMicApi) {
+        elMicApi.innerText = hasGetUserMedia ? 'AVAILABLE' : 'UNAVAILABLE';
+        elMicApi.className = `diag-val ${hasGetUserMedia ? 'ok' : 'err'}`;
+      }
+
+      // Audio Stream
+      const elStream = document.getElementById('diagStream');
+      if (elStream) {
+        elStream.innerText = diagStreamState;
+        elStream.className = `diag-val ${diagStreamState === 'ACTIVE' ? 'ok' : (diagStreamState === 'INACTIVE' ? '' : 'err')}`;
+      }
+
+      // Permission State (if query supported)
+      const elPerm = document.getElementById('diagPerm');
+      if (navigator.permissions && navigator.permissions.query) {
+        try {
+          const perm = await navigator.permissions.query({ name: 'microphone' });
+          if (elPerm) {
+            elPerm.innerText = perm.state.toUpperCase();
+            elPerm.className = `diag-val ${perm.state === 'granted' ? 'ok' : (perm.state === 'denied' ? 'err' : 'warn')}`;
+          }
+          if (perm.state === 'granted') {
+            updateMicStatus('ready', 'Ready');
+          } else if (perm.state === 'denied') {
+            updateMicStatus('denied', 'Permission Denied');
+          } else {
+            updateMicStatus('required', 'Permission Required');
+          }
+        } catch (e) {
+          if (elPerm) { elPerm.innerText = 'UNKNOWN (QUERY UNSUPPORTED)'; elPerm.className = 'diag-val'; }
+        }
+      } else {
+        if (elPerm) { elPerm.innerText = 'UNKNOWN (QUERY UNSUPPORTED)'; elPerm.className = 'diag-val'; }
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // WebSocket Connection with Exponential Backoff Auto-Reconnect
+    // ─────────────────────────────────────────────────────────────────────────
+    function connectWebSocket() {
+      if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+        return;
+      }
+
+      setConnectionStatus('connecting', 'CONNECTING...');
+
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.host;
+      const wsUrl = `${protocol}//${host}/ws/audio`;
+
+      try {
+        ws = new WebSocket(wsUrl);
+        ws.binaryType = 'arraybuffer';
+
+        ws.onopen = () => {
+          console.log('[WS] Connected to AROGYA PC Voice Server');
+          wsConnected = true;
+          reconnectAttempts = 0;
+          setConnectionStatus('connected', 'CONNECTED');
+          // Announce device handshake
+          ws.send(JSON.stringify({
+            type: 'device_handshake',
+            client: navigator.userAgent,
+            timestamp: Date.now()
+          }));
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            handleServerMessage(data);
+          } catch (e) {
+            console.warn('[WS] Non-JSON payload received:', event.data);
+          }
+        };
+
+        ws.onerror = (err) => {
+          console.error('[WS] WebSocket error:', err);
+        };
+
+        ws.onclose = () => {
+          console.log('[WS] Disconnected from server');
+          wsConnected = false;
+          setConnectionStatus('disconnected', 'DISCONNECTED');
+          if (isRecording) {
+            stopAudioCapture();
+          }
+          // Auto reconnect with exponential backoff capped at 5s
+          const delay = Math.min(1000 * Math.pow(1.5, reconnectAttempts), 5000);
+          reconnectAttempts++;
+          clearTimeout(reconnectTimeout);
+          reconnectTimeout = setTimeout(connectWebSocket, delay);
+        };
+      } catch (err) {
+        console.error('[WS] Connection attempt failed:', err);
+        setConnectionStatus('disconnected', 'DISCONNECTED');
+        reconnectTimeout = setTimeout(connectWebSocket, 3000);
+      }
+    }
+
+    function setConnectionStatus(status, text) {
+      connBadge.className = `status-badge ${status}`;
+      connText.innerText = text;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Server Message Dispatcher
+    // ─────────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
+    // Audio Downsampling (Hardware Rate -> 16000 Hz Mono PCM) & Meter
+    // ─────────────────────────────────────────────────────────────────────────
+    function downsampleBuffer(buffer, inputSampleRate, outputSampleRate) {
+      if (outputSampleRate === inputSampleRate || inputSampleRate < outputSampleRate) {
+        return buffer;
+      }
+      const sampleRateRatio = inputSampleRate / outputSampleRate;
+      const newLength = Math.round(buffer.length / sampleRateRatio);
+      const result = new Float32Array(newLength);
+      let offsetResult = 0;
+      let offsetBuffer = 0;
+      while (offsetResult < result.length) {
+        const nextOffsetBuffer = Math.round((offsetResult + 1) * sampleRateRatio);
+        let accum = 0;
+        let count = 0;
+        for (let i = offsetBuffer; i < nextOffsetBuffer && i < buffer.length; i++) {
+          accum += buffer[i];
+          count++;
+        }
+        result[offsetResult] = count > 0 ? (accum / count) : buffer[offsetBuffer];
+        offsetResult++;
+        offsetBuffer = nextOffsetBuffer;
+      }
+      return result;
+    }
+
+    function updateAudioMeter(rms) {
+      const barsEl = document.getElementById('audioMeterBars');
+      const dbEl = document.getElementById('audioMeterDb');
+      const vadEl = document.getElementById('diagVad');
+      if (!barsEl || !dbEl) return;
+
+      if (!rms || rms <= 0.0001) {
+        barsEl.innerText = '▁▁▁▁▁';
+        barsEl.className = 'meter-bars';
+        dbEl.innerText = '-∞ dB';
+        if (vadEl) { vadEl.innerText = 'SILENCE'; vadEl.className = 'diag-val'; }
+        return;
+      }
+
+      const db = 20 * Math.log10(Math.max(rms, 0.0001));
+      dbEl.innerText = `${Math.round(db)} dB`;
+      const isSpeech = db > -35;
+      if (vadEl) {
+        vadEl.innerText = isSpeech ? 'SPEECH' : 'SILENCE';
+        vadEl.className = `diag-val ${isSpeech ? 'ok' : ''}`;
+      }
+
+      if (db < -42) {
+        barsEl.innerText = '▁▁▁▁▁';
+        barsEl.className = 'meter-bars';
+      } else if (db < -32) {
+        barsEl.innerText = '▂▁▁▁▁';
+        barsEl.className = 'meter-bars active';
+      } else if (db < -24) {
+        barsEl.innerText = '▂▄▁▁▁';
+        barsEl.className = 'meter-bars active';
+      } else if (db < -15) {
+        barsEl.innerText = '▂▄▆▁▁';
+        barsEl.className = 'meter-bars active';
+      } else if (db < -8) {
+        barsEl.innerText = '▂▄▆█▁';
+        barsEl.className = 'meter-bars peak';
+      } else {
+        barsEl.innerText = '▂▄▆██';
+        barsEl.className = 'meter-bars peak';
+      }
+    }
+
+    function updateWakeTelemetry(debug) {
+      if (!debug) return;
+      const stEl = document.getElementById('wakeStatusVal');
+      const confEl = document.getElementById('wakeConfVal');
+      const detEl = document.getElementById('wakeDetectedVal');
+      const normEl = document.getElementById('wakeNormVal');
+      const badgeEl = document.getElementById('wakeStatusBadge');
+
+      const st = debug.status || 'SLEEPING';
+      if (stEl) stEl.innerText = st;
+      if (confEl) confEl.innerText = debug.confidence ? `${Math.round(debug.confidence * 100)}%` : '0%';
+      if (detEl) detEl.innerText = debug.detected ? `"${debug.detected}"` : '--';
+      if (normEl) normEl.innerText = debug.normalized ? `"${debug.normalized}"` : '--';
+
+      if (badgeEl) {
+        badgeEl.innerText = st;
+        if (st === 'WAKE DETECTED') {
+          badgeEl.style.background = 'rgba(16, 185, 129, 0.15)';
+          badgeEl.style.color = 'var(--success-glow)';
+          badgeEl.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+        } else if (st === 'LISTENING') {
+          badgeEl.style.background = 'rgba(245, 158, 11, 0.15)';
+          badgeEl.style.color = 'var(--warning)';
+          badgeEl.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+        } else {
+          badgeEl.style.background = 'rgba(56, 189, 248, 0.15)';
+          badgeEl.style.color = 'var(--primary-glow)';
+          badgeEl.style.borderColor = 'rgba(56, 189, 248, 0.3)';
+        }
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Server Message Dispatcher
+    // ─────────────────────────────────────────────────────────────────────────
+    function handleServerMessage(msg) {
+      switch (msg.type) {
+        case 'connected':
+          console.log('[SERVER]', msg.message);
+          break;
+
+        case 'transcript_partial':
+          renderPartialTranscript(msg.text);
+          break;
+
+        case 'transcript_final':
+          renderFinalTranscript(msg.text);
+          if (currentMode === 'tap' && isRecording) {
+            stopAudioCapture();
+          }
+          break;
+
+        case 'voice_status':
+          if (msg.status === 'listening') {
+            setMicUIState('listening');
+          } else if (msg.status === 'processing') {
+            setMicUIState('processing');
+          } else if (msg.status === 'command_detected') {
+            setMicUIState('accepted');
+            setTimeout(() => {
+              if (!isRecording) setMicUIState('idle');
+            }, 2500);
+          } else if (msg.status === 'ready') {
+            if (!isRecording) setMicUIState('idle');
+          } else if (msg.status === 'error') {
+            showMicAlert(msg.message || 'Voice service temporarily unavailable.');
+            if (!isRecording) setMicUIState('idle');
+          }
+          break;
+
+        case 'voice_state':
+          if (msg.wake_debug) {
+            updateWakeTelemetry(msg.wake_debug);
+          }
+          if (msg.state === 'WAKE_DETECTED' || msg.state === 'LISTENING_FOR_COMMAND') {
+            setMicUIState('listening');
+            const stateLbl = document.getElementById('micStateLabel');
+            const subLbl = document.getElementById('micSubtext');
+            if (stateLbl) stateLbl.innerText = "LISTENING FOR COMMAND";
+            if (subLbl) subLbl.innerText = msg.response || "Yes, how can I help?";
+          } else if (msg.state === 'COMMAND_ACCEPTED' || msg.state === 'PROCESSING_COMMAND') {
+            setMicUIState('accepted');
+            setTimeout(() => {
+              if (!isRecording) setMicUIState('idle');
+            }, 2500);
+          } else if (msg.state === 'SLEEPING') {
+            if (!isRecording) setMicUIState('idle');
+          }
+          break;
+
+        case 'mission_update':
+          updateMissionIntelligence(msg);
+          break;
+
+        case 'telemetry':
+          updateFleetTelemetry(msg);
+          if (msg.audio_diagnostics) {
+            const elLat = document.getElementById('diagSttLatency');
+            if (elLat && msg.audio_diagnostics.stt_latency_ms !== undefined) {
+              elLat.innerText = `${msg.audio_diagnostics.stt_latency_ms} ms`;
+            }
+          }
+          break;
+
+        case 'device_rejected':
+          showMicAlert(`⚠️ Notice: Another mobile device (${msg.active_controller}) is currently controlling voice.`);
+          break;
+
+        default:
+          break;
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Web Audio API: Hardware Capture -> Anti-Aliased Resampling -> 16 kHz PCM
+    // ─────────────────────────────────────────────────────────────────────────
+    async function startAudioCapture() {
+      // Prevent double recording / re-entrant clicks
+      if (isRecording || isStartingCapture || isProcessing) return;
+      isStartingCapture = true;
+
+      // 1. Verify Secure Context (HTTPS requirement for mic access)
+      if (!window.isSecureContext) {
+        const errMsg = 'Microphone access is blocked: Mobile browsers require a Secure Context (HTTPS). Please reload this page via https://' + window.location.host;
+        console.error('[AUDIO]', errMsg);
+        updateMicStatus('insecure', 'Insecure Context');
+        showMicAlert(errMsg);
+        diagStreamState = 'FAILED (Insecure Context)';
+        isStartingCapture = false;
+        runDiagnostics();
+        return;
+      }
+
+      // 2. Verify MediaDevices API availability
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        const errMsg = 'mediaDevices.getUserMedia() is unavailable in this browser. Please ensure you are visiting via HTTPS.';
+        console.error('[AUDIO]', errMsg);
+        updateMicStatus('error', 'API Unavailable');
+        showMicAlert(errMsg);
+        diagStreamState = 'FAILED (API Unavailable)';
+        isStartingCapture = false;
+        runDiagnostics();
+        return;
+      }
+
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        audioContext = new AudioCtx();
+        const nativeSampleRate = audioContext.sampleRate;
+        console.log(`[AUDIO] Hardware native sample rate: ${nativeSampleRate} Hz`);
+
+        const elHwSr = document.getElementById('diagHwSr');
+        if (elHwSr) elHwSr.innerText = `${nativeSampleRate} Hz`;
+
+        mediaStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: 1,
+            sampleRate: 16000,
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+
+        const source = audioContext.createMediaStreamSource(mediaStream);
+        const bufferSize = 4096;
+        processorNode = audioContext.createScriptProcessor(bufferSize, 1, 1);
+
+        processorNode.onaudioprocess = (e) => {
+          if (!isRecording || !wsConnected || ws.readyState !== WebSocket.OPEN) return;
+
+          const float32Data = e.inputBuffer.getChannelData(0);
+
+          // 1. Calculate live RMS on raw samples for the real-time visual meter
+          let sumSquares = 0;
+          for (let i = 0; i < float32Data.length; i++) {
+            sumSquares += float32Data[i] * float32Data[i];
+          }
+          const rms = Math.sqrt(sumSquares / float32Data.length);
+          updateAudioMeter(rms);
+
+          // 2. Resample from hardware native rate (e.g. 48000 Hz) down to 16000 Hz
+          const resampled16k = downsampleBuffer(float32Data, audioContext.sampleRate, 16000);
+
+          // 3. Convert 16 kHz Float32 to Signed 16-bit PCM Little-Endian
+          const int16Buffer = new ArrayBuffer(resampled16k.length * 2);
+          const view = new DataView(int16Buffer);
+
+          for (let i = 0; i < resampled16k.length; i++) {
+            let s = Math.max(-1, Math.min(1, resampled16k[i]));
+            let int16Sample = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            view.setInt16(i * 2, int16Sample, true); // Little-Endian
+          }
+
+          // 4. Stream 16 kHz PCM chunk over WebSocket
+          ws.send(int16Buffer);
+          framesSentCount += resampled16k.length;
+          const elFrames = document.getElementById('diagFrames');
+          if (elFrames) elFrames.innerText = framesSentCount;
+        };
+
+        source.connect(processorNode);
+        processorNode.connect(audioContext.destination);
+
+        isRecording = true;
+        isStartingCapture = false;
+        diagStreamState = `ACTIVE (Resampled ${nativeSampleRate} &rarr; 16 kHz PCM)`;
+        updateMicStatus('listening', 'Listening');
+        setMicUIState('listening');
+        if (partialStatus) partialStatus.innerText = 'Listening...';
+        hideMicAlert();
+        runDiagnostics();
+
+        // Inform server audio streaming has started
+        if (wsConnected && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'audio_stream_start', mode: currentMode }));
+        }
+
+      } catch (err) {
+        console.error('[AUDIO] Microphone access failed:', err.name, err.message);
+        isStartingCapture = false;
+        diagStreamState = 'FAILED (' + (err.name || 'Error') + ')';
+        runDiagnostics();
+
+        let actionableMsg = '';
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          updateMicStatus('denied', 'Permission Denied');
+          actionableMsg = 'Microphone permission is blocked. Open browser site settings (tap the lock/tune icon in the URL bar), set Microphone to Allow, then reload this page.';
+        } else if (err.name === 'SecurityError') {
+          updateMicStatus('insecure', 'HTTPS Required');
+          actionableMsg = 'SecurityError: Browser microphone access is restricted to secure HTTPS origins. Please browse to https://' + window.location.host;
+        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+          updateMicStatus('error', 'No Mic Found');
+          actionableMsg = 'NotFoundError: No microphone hardware detected on this device.';
+        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+          updateMicStatus('error', 'Mic Busy');
+          actionableMsg = 'NotReadableError: Microphone is busy or locked by another app or phone call.';
+        } else if (err.name === 'OverconstrainedError') {
+          updateMicStatus('error', 'Constraints Failed');
+          actionableMsg = 'OverconstrainedError: Device microphone cannot fulfill the requested audio constraints.';
+        } else if (err.name === 'TypeError') {
+          updateMicStatus('error', 'API Undefined');
+          actionableMsg = 'TypeError: Media capture API is undefined. Secure context (HTTPS) is required.';
+        } else {
+          updateMicStatus('error', err.name || 'Error');
+          actionableMsg = `Microphone error (${err.name}): ${err.message || 'Access failed.'}`;
+        }
+
+        showMicAlert(actionableMsg);
+        stopAudioCapture();
+        setMicUIState('idle');
+      }
+    }
+
+    function stopAudioCapture() {
+      isRecording = false;
+      isStartingCapture = false;
+
+      if (processorNode) {
+        try { processorNode.disconnect(); } catch (e) {}
+        processorNode = null;
+      }
+      if (mediaStream) {
+        try {
+          mediaStream.getTracks().forEach(track => track.stop());
+        } catch (e) {}
+        mediaStream = null;
+      }
+      if (audioContext && audioContext.state !== 'closed') {
+        try { audioContext.close(); } catch (e) {}
+        audioContext = null;
+      }
+
+      if (wsConnected && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'audio_stream_end' }));
+      }
+
+      updateAudioMeter(0);
+      diagStreamState = 'INACTIVE';
+      if (partialStatus) partialStatus.innerText = 'Processing...';
+      runDiagnostics();
+      if (!isRecording) {
+        updateMicStatus('ready', 'Ready');
+      }
+    }
+
+    function toggleMicrophone() {
+      if (!wsConnected) {
+        showMicAlert('Cannot record: Reconnecting to AROGYA PC Server...');
+        return;
+      }
+
+      if (isProcessing) {
+        showMicAlert('Processing command... please wait.');
+        return;
+      }
+
+      if (isRecording) {
+        stopAudioCapture();
+        setMicUIState('processing');
+      } else {
+        startAudioCapture();
+      }
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.getElementById('modeTapBtn').className = `mode-btn ${mode === 'tap' ? 'active' : ''}`;
+      document.getElementById('modeWakeBtn').className = `mode-btn ${mode === 'wake' ? 'active' : ''}`;
+
+      if (isRecording) {
+        stopAudioCapture();
+      }
+
+      if (mode === 'wake') {
+        micSubtext.innerText = 'Say "Hey Arogya" to awaken the assistant';
+      } else {
+        micSubtext.innerText = 'Tap and speak a clinical command';
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // UI State Rendering & Dual-Channel Transcripts
+    // ─────────────────────────────────────────────────────────────────────────
+    function setMicUIState(state) {
+      micWrapper.className = `mic-button-wrapper ${state}`;
+      if (state === 'listening') {
+        micIcon.innerText = '⏹️';
+        micStateLabel.innerText = '🔴 LISTENING...';
+        micStateLabel.style.color = '#ef4444';
+        micSubtext.innerText = 'Tap button when finished speaking';
+        isProcessing = false;
+      } else if (state === 'processing') {
+        micIcon.innerText = '🧠';
+        micStateLabel.innerText = 'UNDERSTANDING SPEECH...';
+        micStateLabel.style.color = '#f59e0b';
+        micSubtext.innerText = 'faster-whisper transcribing utterance...';
+        isProcessing = true;
+      } else if (state === 'accepted') {
+        micIcon.innerText = '✅';
+        micStateLabel.innerText = 'COMMAND ACCEPTED';
+        micStateLabel.style.color = '#10b981';
+        micSubtext.innerText = 'AROGYA: Command received';
+        isProcessing = false;
+      } else {
+        micIcon.innerText = '🎙️';
+        micStateLabel.innerText = 'TAP TO SPEAK';
+        micStateLabel.style.color = '#fff';
+        micSubtext.innerText = currentMode === 'wake' ? 'Say "Hey Arogya" or tap to speak' : 'Tap and speak a clinical command';
+        isProcessing = false;
+      }
+    }
+
+    function renderPartialTranscript(text) {
+      if (!text) return;
+      if (transcriptPartial) {
+        transcriptPartial.innerText = `"${text}..."`;
+        transcriptPartial.classList.remove('empty');
+      }
+      if (partialStatus) {
+        partialStatus.innerText = 'Speaking...';
+      }
+    }
+
+    function renderFinalTranscript(text) {
+      if (!text) return;
+      if (transcriptFinal) {
+        transcriptFinal.innerText = `"${text}"`;
+        transcriptFinal.classList.remove('empty');
+      }
+      if (finalTimestamp) {
+        finalTimestamp.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      }
+      if (transcriptPartial) {
+        transcriptPartial.innerText = 'Utterance complete';
+        transcriptPartial.classList.add('empty');
+      }
+      if (partialStatus) {
+        partialStatus.innerText = 'Finalized';
+      }
+      isProcessing = false;
+    }
+
+    function updateMissionIntelligence(data) {
+      if (data.intent) intelIntent.innerText = data.intent.replace(/_/g, ' ');
+      if (data.destination) intelTarget.innerText = data.destination;
+      if (data.assigned_robot) intelRobot.innerText = data.assigned_robot.replace(/_/g, ' ');
+      if (data.status) intelStatus.innerText = data.status.replace(/_/g, ' ');
+
+      if (data.is_emergency) {
+        intelIntent.className = 'intel-val emergency';
+      } else {
+        intelIntent.className = 'intel-val highlight';
+      }
+
+      // Add to command history
+      if (data.raw_text) {
+        addHistoryItem({
+          text: data.raw_text,
+          robot: data.assigned_robot || 'AUTO',
+          dest: data.destination || '',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          is_emergency: !!data.is_emergency
+        });
+      }
+    }
+
+    function addHistoryItem(item) {
+      commandHistory.unshift(item);
+      if (commandHistory.length > 20) commandHistory.pop();
+      renderHistory();
+    }
+
+    function renderHistory() {
+      historyCount.innerText = `${commandHistory.length} command${commandHistory.length === 1 ? '' : 's'}`;
+      if (commandHistory.length === 0) {
+        historyList.innerHTML = `<div style="font-size: 11px; color: var(--text-dim); text-align: center; padding: 12px;">No voice commands executed yet</div>`;
+        return;
+      }
+
+      historyList.innerHTML = commandHistory.map(cmd => `
+        <div class="history-item ${cmd.is_emergency ? 'emergency' : ''}">
+          <div class="history-text">"${escapeHtml(cmd.text)}"</div>
+          <div class="history-meta">${escapeHtml(cmd.robot)} • ${escapeHtml(cmd.time)}</div>
+        </div>
+      `).join('');
+    }
+
+    function updateFleetTelemetry(data) {
+      if (!data.robots) return;
+      Object.keys(data.robots).forEach(rName => {
+        const rInfo = data.robots[rName];
+        const statusEl = document.getElementById(`chip-status-${rName}`);
+        const batEl = document.getElementById(`chip-bat-${rName}`);
+        const chipEl = document.getElementById(`chip-${rName}`);
+
+        if (statusEl) statusEl.innerText = `${rInfo.state} (${rInfo.destination || 'STANDBY'})`;
+        if (batEl) {
+          const bat = Math.round(rInfo.battery || 100);
+          batEl.style.width = `${bat}%`;
+          batEl.style.backgroundColor = bat > 40 ? 'var(--success)' : (bat > 20 ? 'var(--warning)' : 'var(--danger)');
+        }
+        if (chipEl && data.assigned_robot) {
+          if (rName === data.assigned_robot || rName.startsWith(data.assigned_robot)) {
+            chipEl.classList.add('assigned');
+          } else {
+            chipEl.classList.remove('assigned');
+          }
+        }
+      });
+    }
+
+    function showMicAlert(msg) {
+      micAlertText.innerText = msg;
+      micAlert.classList.add('show');
+    }
+
+    function hideMicAlert() {
+      micAlert.classList.remove('show');
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Fallback Text Command Dispatch
+    // ─────────────────────────────────────────────────────────────────────────
+    function sendTextCommand() {
+      const text = cmdInput.value.trim();
+      if (!text) return;
+
+      if (!wsConnected || ws.readyState !== WebSocket.OPEN) {
+        // Fallback to HTTP POST
+        fetch('/api/command', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ command: text, source: 'mobile_text' })
+        }).then(res => res.json()).then(resp => {
+          renderFinalTranscript(text);
+          cmdInput.value = '';
+        }).catch(err => {
+          showMicAlert('Failed to send text command: ' + err);
+        });
+        return;
+      }
+
+      ws.send(JSON.stringify({
+        type: 'text_command',
+        text: text,
+        source: 'mobile_text'
+      }));
+
+      renderFinalTranscript(text);
+      cmdInput.value = '';
+    }
+
+    function handleInputKey(e) {
+      if (e.key === 'Enter') sendTextCommand();
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Initialize on window load
+    window.addEventListener('DOMContentLoaded', () => {
+      runDiagnostics();
+      connectWebSocket();
+    });
+  </script>
+</body>
+</html>

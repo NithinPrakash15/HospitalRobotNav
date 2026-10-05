@@ -1,0 +1,7 @@
+audio_capture_node:
+  ros__parameters:
+    sample_rate: 16000
+    chunk_duration_ms: 30
+    publish_rate_hz: 30.0
+    use_microphone: true
+

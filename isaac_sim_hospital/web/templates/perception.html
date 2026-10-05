@@ -1,0 +1,1761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AROGYA - High-Fidelity Perception &amp; Multi-Robot POV</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #060a12;
+      --card-bg: rgba(11, 19, 36, 0.94);
+      --card-border: rgba(56, 189, 248, 0.22);
+      --card-glow: rgba(56, 189, 248, 0.10);
+      --accent-cyan: #00f0ff;
+      --accent-blue: #38bdf8;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+      --accent-purple: #a855f7;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(ellipse at 50% 0%, rgba(14, 116, 144, 0.15) 0%, transparent 60%),
+        linear-gradient(180deg, #060a12 0%, #030712 100%);
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 16px 20px;
+      overflow-x: hidden;
+    }
+
+    /* Top Command Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 15px var(--card-glow);
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-green);
+      display: inline-block;
+      box-shadow: 0 0 10px var(--accent-green);
+      animation: pulseDot 2s infinite ease-in-out;
+    }
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+
+    .brand-title {
+      font-size: 1.22rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      background: linear-gradient(90deg, #00f0ff, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .brand-sub {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    /* Multi-Robot Selector */
+    .robot-selector-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(15, 23, 42, 0.8);
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .robot-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      font-weight: 600;
+      padding: 7px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .robot-btn:hover {
+      color: var(--accent-cyan);
+      background: rgba(56, 189, 248, 0.12);
+      border-color: rgba(56, 189, 248, 0.3);
+    }
+    .robot-btn.active {
+      color: #040812;
+      background: linear-gradient(135deg, #00f0ff, #38bdf8);
+      font-weight: 700;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.5);
+      border-color: #00f0ff;
+    }
+    .robot-btn-tag {
+      font-size: 0.65rem;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: rgba(0, 0, 0, 0.25);
+      text-transform: uppercase;
+    }
+
+    /* Cards & Containers */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(10px);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+      padding-bottom: 8px;
+    }
+    .card-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: 0.4px;
+    }
+    .badge {
+      font-size: 0.70rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      text-transform: uppercase;
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--accent-green);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+    .badge-amber {
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--accent-amber);
+      border-color: rgba(245, 158, 11, 0.4);
+    }
+    .badge-red {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--accent-red);
+      border-color: rgba(239, 68, 68, 0.4);
+    }
+    .badge-cyan {
+      background: rgba(0, 240, 255, 0.15);
+      color: var(--accent-cyan);
+      border-color: rgba(0, 240, 255, 0.35);
+    }
+
+    /* ══════════════════════════════════════════════════════════════ */
+    /* HERO SECTION: LARGE CAMERA VIEWPORT DOMINANT LAYOUT           */
+    /* ══════════════════════════════════════════════════════════════ */
+    .hero-perception-grid {
+      display: grid;
+      grid-template-columns: 2.4fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    @media (max-width: 1200px) {
+      .hero-perception-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Large Camera Frame */
+    .camera-hero-card {
+      display: flex;
+      flex-direction: column;
+    }
+    .camera-frame-large {
+      position: relative;
+      width: 100%;
+      height: 540px;
+      background: #020611;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 240, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    @media (max-width: 900px) {
+      .camera-frame-large { height: 380px; }
+    }
+    .camera-frame-large img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Glassmorphic Live HUD Chips over Camera */
+    .camera-overlay-top-left {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 10;
+    }
+    .camera-overlay-top-right {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      z-index: 10;
+    }
+    .camera-overlay-bottom {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 10;
+      background: rgba(6, 10, 18, 0.75);
+      backdrop-filter: blur(8px);
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+    }
+    .hud-chip {
+      background: rgba(6, 10, 18, 0.82);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #f1f5f9;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    }
+    .hud-chip-danger {
+      border-color: rgba(239, 68, 68, 0.6);
+      background: rgba(239, 68, 68, 0.25);
+      color: #fca5a5;
+    }
+
+    /* Radar Container alongside Camera */
+    .radar-panel {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .radar-container {
+      width: 100%;
+      height: 100%;
+      min-height: 480px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: #020617;
+      border-radius: 8px;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      position: relative;
+      padding: 10px;
+    }
+    canvas#radarCanvas {
+      width: 100%;
+      max-width: 360px;
+      height: auto;
+      aspect-ratio: 1 / 1;
+    }
+    .radar-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 10px;
+      font-size: 0.68rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .legend-color {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* ══════════════════════════════════════════════════════════════ */
+    /* SENSOR DIAGNOSTIC PANEL (Requirement 16)                      */
+    /* ══════════════════════════════════════════════════════════════ */
+    .diagnostics-container {
+      margin-bottom: 14px;
+    }
+    .diag-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 1000px) {
+      .diag-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .diag-grid { grid-template-columns: 1fr; }
+    }
+    .diag-card {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(148, 163, 184, 0.15);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .diag-card:hover {
+      border-color: var(--accent-cyan);
+      background: rgba(15, 23, 42, 0.85);
+    }
+    .diag-card.active-robot-card {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+      background: rgba(14, 116, 144, 0.18);
+    }
+    .diag-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .diag-robot-name {
+      font-weight: 700;
+      color: #f1f5f9;
+      font-size: 0.82rem;
+    }
+    .diag-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      color: var(--text-muted);
+    }
+    .diag-val {
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    /* Tables & Grids */
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    @media (max-width: 900px) {
+      .grid-2col { grid-template-columns: 1fr; }
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    th {
+      text-align: left;
+      padding: 7px 8px;
+      color: var(--text-muted);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+      font-weight: 600;
+    }
+    td {
+      padding: 7px 8px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+      color: #e2e8f0;
+    }
+    tr:hover td {
+      background: rgba(56, 189, 248, 0.04);
+    }
+
+    /* 5-Tuple Reasoning Box */
+    .reasoning-box {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 0.82rem;
+    }
+    .reason-row {
+      display: grid;
+      grid-template-columns: 105px 1fr;
+      align-items: baseline;
+      padding: 5px 8px;
+      background: rgba(30, 41, 59, 0.4);
+      border-radius: 4px;
+      border-left: 3px solid var(--accent-cyan);
+    }
+    .reason-label {
+      font-weight: 700;
+      color: var(--accent-cyan);
+      font-size: 0.74rem;
+      letter-spacing: 0.5px;
+    }
+    .reason-val {
+      color: #f1f5f9;
+      line-height: 1.35;
+    }
+
+    /* Event Timeline */
+    .timeline {
+      max-height: 160px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+    }
+    .timeline-item {
+      display: flex;
+      gap: 8px;
+      padding: 5px 8px;
+      background: rgba(30, 41, 59, 0.35);
+      border-radius: 4px;
+      border-left: 3px solid #38bdf8;
+    }
+    .timeline-time { color: var(--accent-cyan); font-weight: 600; min-width: 60px; }
+    .timeline-src { color: var(--accent-green); font-weight: 600; min-width: 85px; }
+    .timeline-msg { color: #cbd5e1; }
+
+    /* Shared World Metrics Bar */
+    .metrics-bar {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .metric-card {
+      background: rgba(30, 41, 59, 0.4);
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      text-align: center;
+    }
+    .metric-val {
+      font-size: 1.10rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+    }
+    .metric-lbl {
+      font-size: 0.62rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    /* ══════════════════════════════════════════════════════════════ */
+    /* 4-STAGE COGNITIVE PIPELINE HUD (SENSE -> UNDERSTAND -> REASON -> ACT) */
+    /* ══════════════════════════════════════════════════════════════ */
+    .pipeline-hud-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 18px;
+      background: linear-gradient(135deg, rgba(11, 19, 36, 0.96), rgba(15, 23, 42, 0.94));
+      border: 1px solid rgba(0, 240, 255, 0.28);
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 16px rgba(0, 240, 255, 0.08);
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .pipeline-stages {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-grow: 1;
+      flex-wrap: wrap;
+    }
+    .stage-card {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 14px;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 8px;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .stage-card.active {
+      border-color: var(--accent-cyan);
+      background: rgba(14, 116, 144, 0.25);
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.35);
+    }
+    .stage-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: var(--accent-cyan);
+      background: rgba(0, 240, 255, 0.14);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(0, 240, 255, 0.32);
+    }
+    .stage-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .stage-title {
+      font-size: 0.80rem;
+      font-weight: 800;
+      color: #f1f5f9;
+      letter-spacing: 0.5px;
+    }
+    .stage-sub {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .pipeline-arrow {
+      color: rgba(56, 189, 248, 0.5);
+      font-size: 1.1rem;
+      font-weight: 700;
+      user-select: none;
+    }
+    .pipeline-mission-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    .pipeline-mission-id {
+      color: var(--accent-cyan);
+      background: rgba(0, 240, 255, 0.12);
+      padding: 2px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ══════════════════════════════════════════════════════════════ */
+    /* EMBODIED MEDICATION DELIVERY & BEDSIDE VERIFICATION           */
+    /* ══════════════════════════════════════════════════════════════ */
+    .container-status-box {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.65);
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+      margin-bottom: 12px;
+    }
+    .container-prim-graphic {
+      width: 64px;
+      height: 64px;
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 12px rgba(0, 240, 255, 0.1);
+    }
+    .container-mesh-icon {
+      font-size: 1.6rem;
+    }
+    .container-details {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .verification-checklist {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .check-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 10px;
+      background: rgba(30, 41, 59, 0.45);
+      border-radius: 6px;
+      border: 1px solid rgba(148, 163, 184, 0.12);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.74rem;
+    }
+    .verification-banner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      transition: all 0.3s ease;
+    }
+    .v-banner-verified {
+      background: rgba(16, 185, 129, 0.18);
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      color: #a7f3d0;
+      box-shadow: 0 0 16px rgba(16, 185, 129, 0.25);
+    }
+    .v-banner-mismatch {
+      background: rgba(239, 68, 68, 0.24);
+      border: 1px solid rgba(239, 68, 68, 0.65);
+      color: #fca5a5;
+      animation: pulseAlert 1.5s infinite;
+    }
+    .v-banner-idle {
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #bae6fd;
+    }
+    @keyframes pulseAlert {
+      0%, 100% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
+      50% { box-shadow: 0 0 22px rgba(239, 68, 68, 0.75); }
+    }
+
+    /* ══════════════════════════════════════════════════════════════ */
+    /* DYNAMIC CONGESTION MAP & FLEET SELF-HEALING                   */
+    /* ══════════════════════════════════════════════════════════════ */
+    .congestion-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+    .congestion-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px;
+      background: rgba(30, 41, 59, 0.4);
+      border-radius: 6px;
+      border-left: 3px solid var(--accent-amber);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.76rem;
+    }
+    .fleet-healing-box {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(148, 163, 184, 0.14);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+    }
+    .healing-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      background: rgba(30, 41, 59, 0.4);
+      padding: 6px 8px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header with Brand & Fleet Robot Selector -->
+  <header>
+    <div class="brand">
+      <div class="status-dot"></div>
+      <div>
+        <div class="brand-title">AROGYA PERCEPTION &bull; MULTI-ROBOT POV</div>
+        <div class="brand-sub">Real Isaac Sim 5.1.0 Multimodal Camera + LiDAR Perception Pipeline</div>
+      </div>
+    </div>
+
+    <!-- Authoritative Multi-Robot Selector -->
+    <div class="robot-selector-bar">
+      <button class="robot-btn active" id="btn-arogya" onclick="selectRobot('Arogya_Delivery')">
+        <span>R1 AROGYA</span>
+        <span class="robot-btn-tag">Delivery</span>
+      </button>
+      <button class="robot-btn" id="btn-mitra" onclick="selectRobot('Mitra_Reception')">
+        <span>R2 MITRA</span>
+        <span class="robot-btn-tag">Reception</span>
+      </button>
+      <button class="robot-btn" id="btn-garuda" onclick="selectRobot('Garuda_Emergency')">
+        <span>R3 GARUDA</span>
+        <span class="robot-btn-tag">Emergency</span>
+      </button>
+      <button class="robot-btn" id="btn-sahayak" onclick="selectRobot('Sahayak_Support')">
+        <span>R4 SAHAYAK</span>
+        <span class="robot-btn-tag">Support</span>
+      </button>
+    </div>
+
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--text-muted);" id="liveClock">
+      00:00:00 UTC
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- COGNITIVE PIPELINE HUD: 4-STAGE PERCEPTION-REASONING TWIN      -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div class="pipeline-hud-banner" id="pipelineBanner">
+    <div class="pipeline-stages">
+      <!-- Stage 1: SENSE -->
+      <div class="stage-card active" id="stageSense">
+        <span class="stage-num">01</span>
+        <div class="stage-info">
+          <span class="stage-title">SENSE</span>
+          <span class="stage-sub" id="stageSenseSub">LiDAR 180° • RGB-D Camera</span>
+        </div>
+      </div>
+
+      <div class="pipeline-arrow">&rarr;</div>
+
+      <!-- Stage 2: UNDERSTAND -->
+      <div class="stage-card" id="stageUnderstand">
+        <span class="stage-num">02</span>
+        <div class="stage-info">
+          <span class="stage-title">UNDERSTAND</span>
+          <span class="stage-sub" id="stageUnderstandSub">Trilingual NLU • Semantic Entities</span>
+        </div>
+      </div>
+
+      <div class="pipeline-arrow">&rarr;</div>
+
+      <!-- Stage 3: REASON -->
+      <div class="stage-card" id="stageReason">
+        <span class="stage-num">03</span>
+        <div class="stage-info">
+          <span class="stage-title">REASON</span>
+          <span class="stage-sub" id="stageReasonSub">5-Tuple Trace • Congestion A*</span>
+        </div>
+      </div>
+
+      <div class="pipeline-arrow">&rarr;</div>
+
+      <!-- Stage 4: ACT -->
+      <div class="stage-card" id="stageAct">
+        <span class="stage-num">04</span>
+        <div class="stage-info">
+          <span class="stage-title">ACT</span>
+          <span class="stage-sub" id="stageActSub">Embodied Handover • Safety Interlock</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Canonical Mission ID Tracker -->
+    <div class="pipeline-mission-badge">
+      <span style="color: var(--text-muted); font-size: 0.72rem; letter-spacing: 0.5px;">CANONICAL MISSION:</span>
+      <span class="pipeline-mission-id" id="pipelineMissionId">MSN-IDLE</span>
+      <span class="status-dot" id="missionActiveDot" style="background: var(--accent-green);"></span>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- HERO SECTION: LARGE LIVE CAMERA VIEWPORT + REAL LiDAR RADAR   -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div class="hero-perception-grid">
+    <!-- Dominant Large Camera Viewport -->
+    <div class="card camera-hero-card">
+      <div class="card-header">
+        <div class="card-title">
+          <span>📷</span> <span id="cameraHeaderTitle">AROGYA_DELIVERY &bull; LIVE ROBOT CAMERA POV</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <span class="badge badge-cyan" id="camResBadge">1280x720</span>
+          <span class="badge" id="camBadge">STREAMING</span>
+        </div>
+      </div>
+
+      <!-- Large Camera Frame with HUD Overlay -->
+      <div class="camera-frame-large">
+        <img id="cameraImg" src="/video_feed" alt="Real Isaac Sim Robot Camera Feed">
+
+        <!-- Top Left HUD Chip: Active Robot & Status -->
+        <div class="camera-overlay-top-left">
+          <div class="hud-chip">
+            <span class="status-dot"></span>
+            <span id="hudRobotName" style="color: var(--accent-cyan);">Arogya_Delivery</span>
+          </div>
+          <div class="hud-chip" id="hudNavStateChip">
+            <span>NAV:</span> <span id="hudNavState" style="color: #a7f3d0;">IDLE</span>
+          </div>
+        </div>
+
+        <!-- Top Right HUD Chip: Resolution & FPS -->
+        <div class="camera-overlay-top-right">
+          <div class="hud-chip">
+            <span>FPS:</span> <span id="hudCamFps" style="color: var(--accent-cyan);">15.0</span>
+          </div>
+          <div class="hud-chip" id="hudClearanceChip">
+            <span>CLEARANCE:</span> <span id="hudClearance">-- m</span>
+          </div>
+        </div>
+
+        <!-- Bottom Status Bar -->
+        <div class="camera-overlay-bottom">
+          <div><strong style="color: var(--accent-blue);">TASK:</strong> <span id="hudTask">Standing by on station</span></div>
+          <div><strong style="color: var(--accent-blue);">DEST:</strong> <span id="hudDest">Home Station</span></div>
+          <div><strong style="color: var(--accent-blue);">POSE:</strong> <span id="hudPose">(0.0, 0.0, 0.0)</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Companion 2D Planar LiDAR Radar Panel -->
+    <div class="card radar-panel">
+      <div class="card-header">
+        <div class="card-title">
+          <span>📡</span> 2D PLANAR LiDAR SCAN
+        </div>
+        <span class="badge" id="lidarBadge">180 BEAMS &bull; 10 HZ</span>
+      </div>
+
+      <div class="radar-container">
+        <canvas id="radarCanvas" width="360" height="360"></canvas>
+
+        <div class="radar-legend">
+          <div class="legend-item"><div class="legend-color" style="background: #38bdf8;"></div> Wall</div>
+          <div class="legend-item"><div class="legend-color" style="background: #10b981;"></div> Person</div>
+          <div class="legend-item"><div class="legend-color" style="background: #ec4899;"></div> Cart</div>
+          <div class="legend-item"><div class="legend-color" style="background: #eab308;"></div> Chair</div>
+          <div class="legend-item"><div class="legend-color" style="background: #a855f7;"></div> AMR</div>
+          <div class="legend-item"><div class="legend-color" style="background: #ef4444;"></div> Alert</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- SENSOR HEALTH & FLEET DIAGNOSTICS MATRIX (Requirement 16)     -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div class="card diagnostics-container">
+    <div class="card-header">
+      <div class="card-title">
+        <span>🩺</span> SENSOR HEALTH &amp; MULTI-ROBOT FLEET DIAGNOSTICS (REAL RUNTIME TELEMETRY)
+      </div>
+      <span class="badge badge-cyan" id="sensorDiagSummary">4 OF 4 ROBOTS REGISTERED</span>
+    </div>
+    <div class="diag-grid" id="diagGrid">
+      <!-- Populated via JavaScript from /api/telemetry sensor_health -->
+      <div class="diag-card active-robot-card" id="diag-Arogya_Delivery" onclick="selectRobot('Arogya_Delivery')">
+        <div class="diag-header">
+          <span class="diag-robot-name">Arogya_Delivery</span>
+          <span class="badge" id="diag-cam-badge-Arogya_Delivery">ONLINE</span>
+        </div>
+        <div class="diag-row"><span>Camera:</span> <span class="diag-val" id="diag-cam-Arogya_Delivery">1280x720 @ 15 FPS</span></div>
+        <div class="diag-row"><span>LiDAR:</span> <span class="diag-val" id="diag-lidar-Arogya_Delivery">ONLINE &bull; 180 beams</span></div>
+        <div class="diag-row"><span>Clearance:</span> <span class="diag-val" id="diag-dist-Arogya_Delivery">-- m</span></div>
+      </div>
+
+      <div class="diag-card" id="diag-Mitra_Reception" onclick="selectRobot('Mitra_Reception')">
+        <div class="diag-header">
+          <span class="diag-robot-name">Mitra_Reception</span>
+          <span class="badge" id="diag-cam-badge-Mitra_Reception">STANDBY</span>
+        </div>
+        <div class="diag-row"><span>Camera:</span> <span class="diag-val" id="diag-cam-Mitra_Reception">1280x720</span></div>
+        <div class="diag-row"><span>LiDAR:</span> <span class="diag-val" id="diag-lidar-Mitra_Reception">ONLINE &bull; 180 beams</span></div>
+        <div class="diag-row"><span>Clearance:</span> <span class="diag-val" id="diag-dist-Mitra_Reception">-- m</span></div>
+      </div>
+
+      <div class="diag-card" id="diag-Garuda_Emergency" onclick="selectRobot('Garuda_Emergency')">
+        <div class="diag-header">
+          <span class="diag-robot-name">Garuda_Emergency</span>
+          <span class="badge" id="diag-cam-badge-Garuda_Emergency">STANDBY</span>
+        </div>
+        <div class="diag-row"><span>Camera:</span> <span class="diag-val" id="diag-cam-Garuda_Emergency">1280x720</span></div>
+        <div class="diag-row"><span>LiDAR:</span> <span class="diag-val" id="diag-lidar-Garuda_Emergency">ONLINE &bull; 180 beams</span></div>
+        <div class="diag-row"><span>Clearance:</span> <span class="diag-val" id="diag-dist-Garuda_Emergency">-- m</span></div>
+      </div>
+
+      <div class="diag-card" id="diag-Sahayak_Support" onclick="selectRobot('Sahayak_Support')">
+        <div class="diag-header">
+          <span class="diag-robot-name">Sahayak_Support</span>
+          <span class="badge" id="diag-cam-badge-Sahayak_Support">STANDBY</span>
+        </div>
+        <div class="diag-row"><span>Camera:</span> <span class="diag-val" id="diag-cam-Sahayak_Support">1280x720</span></div>
+        <div class="diag-row"><span>LiDAR:</span> <span class="diag-val" id="diag-lidar-Sahayak_Support">ONLINE &bull; 180 beams</span></div>
+        <div class="diag-row"><span>Clearance:</span> <span class="diag-val" id="diag-dist-Sahayak_Support">-- m</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <!-- ROW 1.5: EMBODIED MEDICATION DELIVERY & DYNAMIC CONGESTION MAP -->
+  <!-- ══════════════════════════════════════════════════════════════ -->
+  <div class="grid-2col" style="margin-bottom: 14px;">
+    <!-- Bedside Patient Verification & 3D Container Prim Checkpoint -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <span>💊</span> EMBODIED MEDICATION DELIVERY &bull; BEDSIDE VERIFICATION CHECKPOINT
+        </div>
+        <span class="badge" id="containerPrimBadge">PRIM: DETACHED</span>
+      </div>
+
+      <!-- 3D Container Status Box -->
+      <div class="container-status-box">
+        <div class="container-prim-graphic">
+          <div class="container-mesh-icon" id="containerMeshIcon">📦</div>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--accent-cyan); text-align: center; margin-top: 4px;" id="containerLockLabel">LOCKED</div>
+        </div>
+        <div class="container-details">
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #94a3b8;">
+            USD Prim Path: <span style="color: var(--accent-blue);" id="containerPrimPath">/World/Robots/Arogya_Delivery/MedicineContainer</span>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap;">
+            <span class="badge" id="containerMountBadge">STANDBY / DETACHED</span>
+            <span class="badge badge-amber" id="containerLockBadge">ELECTRONIC LATCH: LOCKED</span>
+          </div>
+          <div style="margin-top: 6px; font-size: 0.78rem; font-family: 'JetBrains Mono', monospace; color: #f1f5f9;">
+            Payload: <strong style="color: #a7f3d0;" id="containerPayload">None (Tray Empty)</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bedside Dual-Factor Verification Checklist -->
+      <div class="verification-checklist">
+        <div class="check-item">
+          <span>PATIENT RFID MATCH:</span>
+          <span class="badge" id="checkRfidBadge">PENDING</span>
+        </div>
+        <div class="check-item">
+          <span>ROOM / BED PLACARD:</span>
+          <span class="badge" id="checkRoomBadge">PENDING</span>
+        </div>
+      </div>
+
+      <!-- Live Verification Banner (Green Verified vs Red Mismatch Lockout) -->
+      <div class="verification-banner v-banner-idle" id="verificationBanner">
+        <div>
+          <span style="font-size: 0.85rem;" id="vBannerTitle">SAFETY INTERLOCK: STANDBY</span>
+          <div style="font-size: 0.70rem; opacity: 0.85; margin-top: 2px;" id="vBannerDesc">Container remains locked during transit. Verification triggers at bedside.</div>
+        </div>
+        <span class="badge" id="vBannerCode">IDLE</span>
+      </div>
+    </div>
+
+    <!-- Dynamic Semantic Cost Map & Autonomous Fleet Recovery -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <span>🗺️</span> DYNAMIC SEMANTIC COST MAP &bull; FLEET SELF-HEALING
+        </div>
+        <span class="badge badge-cyan" id="congestionBadge">DECAY HALF-LIFE: 45s</span>
+      </div>
+
+      <div style="margin-bottom: 10px;">
+        <div style="font-size: 0.72rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-weight: 700; margin-bottom: 6px;">
+          ACTIVE CONGESTION HOTSPOTS (A* COST PENALTIES):
+        </div>
+        <div class="congestion-list" id="congestionList">
+          <div class="congestion-item" style="border-left-color: var(--accent-green);">
+            <span>Hospital Corridors Clear</span>
+            <span style="color: var(--accent-green);">Penalty: 0.0 &bull; Nominal</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Environmental Hazards -->
+      <div style="margin-bottom: 10px;">
+        <div style="font-size: 0.72rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; font-weight: 700; margin-bottom: 6px;">
+          ACTIVE ENVIRONMENTAL HAZARDS:
+        </div>
+        <div id="activeHazardsList" style="display: flex; flex-direction: column; gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.74rem;">
+          <div style="color: var(--text-muted); padding: 4px 8px; background: rgba(30, 41, 59, 0.35); border-radius: 4px;">
+            Zero active environmental hazards reported in Shared World Model.
+          </div>
+        </div>
+      </div>
+
+      <!-- Autonomous Fleet Self-Healing & Preemption Status -->
+      <div class="fleet-healing-box">
+        <div class="healing-item">
+          <span style="color: var(--text-muted);">FLEET BATTERY HANDOFF:</span>
+          <span style="color: var(--accent-green); font-weight: 700;" id="batteryHandoffStatus">NOMINAL (&gt;30%)</span>
+        </div>
+        <div class="healing-item">
+          <span style="color: var(--text-muted);">PREEMPTION STACK DEPTH:</span>
+          <span style="color: var(--accent-cyan); font-weight: 700;" id="preemptionDepthVal">0 (NO PREEMPTION)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: SENSE & UNDERSTAND + EXPLAINABLE REASONING -->
+  <div class="grid-2col">
+    <!-- Detected Objects Table (Entity Perception) -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <span>🧠</span> UNDERSTAND &bull; REAL ENTITY PERCEPTION
+        </div>
+        <span class="badge" id="objCountBadge">0 DETECTED</span>
+      </div>
+      <div style="max-height: 180px; overflow-y: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>OBJECT</th>
+              <th>TYPE</th>
+              <th>DIST</th>
+              <th>BEARING</th>
+              <th>STATUS</th>
+              <th>POS (X,Y)</th>
+            </tr>
+          </thead>
+          <tbody id="objectsTableBody">
+            <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Sensors active &bull; Scanning hospital environment</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Explainable 5-Tuple Reasoning Engine -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <span>⚡</span> REASON &bull; 5-TUPLE COGNITIVE DECISION ENGINE
+        </div>
+        <span class="badge badge-cyan" id="reasonDecBadge">STANDBY</span>
+      </div>
+      <div class="reasoning-box">
+        <div class="reason-row">
+          <div class="reason-label">SITUATION</div>
+          <div class="reason-val" id="reasonSituation">Evaluating current clinical environment...</div>
+        </div>
+        <div class="reason-row">
+          <div class="reason-label">CONSTRAINTS</div>
+          <div class="reason-val" id="reasonConstraints">Corridor boundaries, 0.38m social margin, non-preemptible emergency priority</div>
+        </div>
+        <div class="reason-row">
+          <div class="reason-label">OPTIONS</div>
+          <div class="reason-val" id="reasonOptions">[STANDBY, NAVIGATE, LOCAL_AVOID, REPLAN_DETOUR, DOCK]</div>
+        </div>
+        <div class="reason-row" style="border-left-color: var(--accent-green);">
+          <div class="reason-label" style="color: var(--accent-green);">DECISION</div>
+          <div class="reason-val" style="font-weight: 700; color: #a7f3d0;" id="reasonDecision">STANDBY</div>
+        </div>
+        <div class="reason-row" style="border-left-color: var(--accent-amber);">
+          <div class="reason-label" style="color: var(--accent-amber);">ACTION</div>
+          <div class="reason-val" style="color: #fef08a;" id="reasonAction">Awaiting clinical instructions</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 3: FLEET KINEMATICS & WORLD EVENT TIMELINE -->
+  <div class="grid-2col">
+    <!-- Active Navigation State & Fleet Table -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <span>🚀</span> ACT &bull; FLEET KINEMATICS &amp; NAVIGATION
+        </div>
+        <span class="badge" id="robotStateBadge">STATE: IDLE</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.80rem;">
+        <div><strong>ACTIVE ROBOT:</strong> <span id="rName" style="color: var(--accent-cyan);">Arogya_Delivery</span></div>
+        <div><strong>BATTERY LEVEL:</strong> <span id="rBatt">100%</span></div>
+        <div><strong>POSE (X,Y,Z):</strong> <span id="rPose">(0.0, 0.0, 0.0)</span></div>
+        <div><strong>HEADING:</strong> <span id="rHeading">0.0&deg;</span></div>
+        <div><strong>DESTINATION:</strong> <span id="rDest">Home Station</span></div>
+        <div><strong>REMAINING DIST:</strong> <span id="rDist">0.0m</span></div>
+        <div style="grid-column: span 2;"><strong>NEAREST OBSTACLE:</strong> <span id="rObstacle" style="color: var(--accent-amber);">Clear (>11.5m)</span></div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>AMR</th>
+            <th>STATUS</th>
+            <th>BATT</th>
+            <th>NEAREST OBS</th>
+            <th>ACTIVE CLINICAL TASK</th>
+          </tr>
+        </thead>
+        <tbody id="fleetTableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Event Timeline & Shared World State -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <span>🌐</span> PERCEPTION EVENT TIMELINE &amp; SHARED WORLD
+        </div>
+        <span class="badge badge-amber">LIVE BUS</span>
+      </div>
+      <div class="timeline" id="eventTimeline">
+        <div class="timeline-item">
+          <span class="timeline-time">00:00:00</span>
+          <span class="timeline-src">[SYSTEM]</span>
+          <span class="timeline-msg">AROGYA perception event stream initialized</span>
+        </div>
+      </div>
+      <div class="metrics-bar">
+        <div class="metric-card">
+          <div class="metric-val" id="swDynamic">0</div>
+          <div class="metric-lbl">Obstacles</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" id="swPersons">0</div>
+          <div class="metric-lbl">Personnel</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" id="swBlocked">0</div>
+          <div class="metric-lbl">Blockages</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" id="swRobots">4</div>
+          <div class="metric-lbl">Fleet AMRs</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" id="swMissions">0</div>
+          <div class="metric-lbl">Missions</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val" id="swEmergency">0</div>
+          <div class="metric-lbl">Code Blue</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 4: TASK ALLOCATION FACTORS & TENDER RATIONALE -->
+  <div class="card" style="margin-top: 14px;">
+    <div class="card-header">
+      <div class="card-title">
+        <span>⚖️</span> TASK ALLOCATION FACTORS &bull; "WHY THIS ROBOT WAS SELECTED"
+      </div>
+      <span class="badge badge-cyan" id="allocStatusBadge">CONTRACT-NET AUCTION</span>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.80rem;">
+      <div><strong>MISSION TYPE:</strong> <span id="allocMissionType" style="color: var(--accent-cyan);">--</span></div>
+      <div><strong>DESTINATION:</strong> <span id="allocDestination" style="color: #fff;">--</span></div>
+      <div><strong>WINNING ROBOT:</strong> <span id="allocWinner" style="color: var(--accent-green); font-weight: 700;">--</span></div>
+      <div><strong>TOP BID SCORE:</strong> <span id="allocScore" style="color: var(--accent-amber); font-weight: 700;">--</span></div>
+    </div>
+    <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.15); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 0.84rem; line-height: 1.5;">
+      <span style="color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Coordinator Selection Rationale:</span>
+      <div id="allocRationale" style="color: #e2e8f0; margin-top: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;">
+        Standing by &bull; Dynamic multi-agent Contract-Net auction will execute upon next clinical command dispatch.
+      </div>
+    </div>
+    <table style="width: 100%;">
+      <thead>
+        <tr>
+          <th>AMR</th>
+          <th>ROLE</th>
+          <th>CAPABILITY (40%)</th>
+          <th>AVAILABILITY (30%)</th>
+          <th>PROXIMITY (15%)</th>
+          <th>BATTERY (15%)</th>
+          <th>TOTAL BID</th>
+          <th>STATUS</th>
+        </tr>
+      </thead>
+      <tbody id="allocBidsTableBody">
+        <tr><td colspan="8" style="text-align: center; color: var(--text-muted);">Awaiting mission tender auction...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    let currentRobot = "Arogya_Delivery";
+
+    // Multi-Robot Switch Handler (Switches BOTH Camera AND LiDAR)
+    function selectRobot(robotName) {
+      if (!robotName) return;
+      currentRobot = robotName;
+
+      // Update selector buttons styling
+      document.querySelectorAll('.robot-btn').forEach(b => b.classList.remove('active'));
+      if (robotName.includes("Delivery")) document.getElementById('btn-arogya').classList.add('active');
+      else if (robotName.includes("Reception")) document.getElementById('btn-mitra').classList.add('active');
+      else if (robotName.includes("Emergency")) document.getElementById('btn-garuda').classList.add('active');
+      else if (robotName.includes("Support")) document.getElementById('btn-sahayak').classList.add('active');
+
+      // Update active highlight in diagnostics grid
+      document.querySelectorAll('.diag-card').forEach(c => c.classList.remove('active-robot-card'));
+      const activeCard = document.getElementById('diag-' + robotName);
+      if (activeCard) activeCard.classList.add('active-robot-card');
+
+      // Update HUD chips
+      document.getElementById('hudRobotName').textContent = robotName;
+      document.getElementById('cameraHeaderTitle').textContent = robotName.toUpperCase() + ' • LIVE ROBOT CAMERA POV';
+      const primPathEl = document.getElementById('containerPrimPath');
+      if (primPathEl) primPathEl.textContent = `/World/Robots/${robotName}/MedicineContainer`;
+
+      // Send selection to server
+      fetch('/api/select_robot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ robot: robotName })
+      }).then(res => res.json()).then(() => {
+        // Smoothly refresh MJPEG stream source
+        const camImg = document.getElementById('cameraImg');
+        camImg.src = '/video_feed?r=' + encodeURIComponent(robotName) + '&t=' + Date.now();
+      }).catch(err => console.error("Error selecting robot:", err));
+    }
+
+    // Canvas 2D Planar LiDAR Polar Scan Renderer (True Geometric Metric Scan)
+    const canvas = document.getElementById('radarCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function renderRadar(lidarPoints, closestDist) {
+      const w = canvas.width;
+      const h = canvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+      const maxR = w / 2 - 14;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Radar Range Rings (1m, 2m, 4m, 6m, 8m physical scale)
+      const scale = maxR / 8.0; // 8 meters full scale
+      [1.0, 2.0, 4.0, 6.0, 8.0].forEach(r => {
+        ctx.beginPath();
+        ctx.arc(cx, cy, r * scale, 0, 2 * Math.PI);
+        ctx.strokeStyle = "rgba(56, 189, 248, 0.16)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.fillStyle = "rgba(148, 163, 184, 0.55)";
+        ctx.font = "10px monospace";
+        ctx.fillText(r + "m", cx + 4, cy - r * scale + 11);
+      });
+
+      // Orthogonal cross axes
+      ctx.beginPath();
+      ctx.moveTo(cx, 10); ctx.lineTo(cx, h - 10);
+      ctx.moveTo(10, cy); ctx.lineTo(w - 10, cy);
+      ctx.strokeStyle = "rgba(56, 189, 248, 0.22)";
+      ctx.stroke();
+
+      // Heading orientation label: +X forward is UP on screen
+      ctx.fillStyle = "rgba(56, 189, 248, 0.7)";
+      ctx.font = "10px monospace";
+      ctx.fillText("FRONT (+X)", cx - 28, 22);
+
+      // Robot chassis footprint at center (0.76m length x 0.60m width)
+      const rw = 0.60 * scale;
+      const rl = 0.76 * scale;
+      ctx.fillStyle = "rgba(0, 240, 255, 0.28)";
+      ctx.strokeStyle = "#00f0ff";
+      ctx.lineWidth = 1.6;
+      ctx.strokeRect(cx - rw / 2, cy - rl / 2, rw, rl);
+      ctx.fillRect(cx - rw / 2, cy - rl / 2, rw, rl);
+
+      // Forward direction arrow (+X forward is UP on screen)
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - rl / 2 - 8);
+      ctx.lineTo(cx - 6, cy - rl / 2 + 3);
+      ctx.lineTo(cx + 6, cy - rl / 2 + 3);
+      ctx.closePath();
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+
+      // Render Actual Physical Laser Hit Points
+      if (lidarPoints && lidarPoints.length > 0) {
+        lidarPoints.forEach(pt => {
+          if (!pt.hit) return;
+          // In robot local frame: pt.x is forward (+X = up on screen), pt.y is lateral (+Y = left on screen)
+          const px = cx - pt.y * scale;
+          const py = cy - pt.x * scale;
+
+          if (Math.hypot(px - cx, py - cy) > maxR) return;
+
+          ctx.beginPath();
+          ctx.arc(px, py, 2.6, 0, 2 * Math.PI);
+
+          // Semantic coloring based on actual physical classification
+          if (pt.range < 0.9) {
+            ctx.fillStyle = "#ef4444"; // Danger zone (< 0.9m)
+          } else if (pt.range < 1.8) {
+            ctx.fillStyle = "#f59e0b"; // Cautionary proximity (< 1.8m)
+          } else {
+            // Semantic tag coloring
+            if (pt.tag === "wall") {
+              ctx.fillStyle = "#38bdf8"; // Wall (Cyan)
+            } else if (pt.tag === "person") {
+              ctx.fillStyle = "#10b981"; // Person (Green)
+            } else if (pt.tag === "cart" || pt.tag === "trolley") {
+              ctx.fillStyle = "#ec4899"; // Medical Cart (Pink)
+            } else if (pt.tag === "wheelchair") {
+              ctx.fillStyle = "#eab308"; // Wheelchair (Amber)
+            } else if (pt.tag === "stretcher") {
+              ctx.fillStyle = "#ef4444"; // Stretcher (Red)
+            } else if (pt.tag === "robot") {
+              ctx.fillStyle = "#a855f7"; // Peer AMR (Purple)
+            } else {
+              ctx.fillStyle = "#94a3b8"; // Default
+            }
+          }
+          ctx.fill();
+        });
+      }
+
+      // Proximity Warning Circle if closest obstacle < 1.8m
+      if (closestDist < 1.8 && closestDist > 0.05) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, closestDist * scale, 0, 2 * Math.PI);
+        ctx.strokeStyle = closestDist < 0.9 ? "#ef4444" : "#f59e0b";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    // Telemetry Polling Loop (10 Hz = 100ms)
+    async function updateTelemetry() {
+      try {
+        const resp = await fetch('/api/telemetry?t=' + Date.now());
+        if (!resp.ok) return;
+        const data = await resp.json();
+
+        // Update clock
+        document.getElementById('liveClock').textContent = new Date().toLocaleTimeString();
+
+        // Update Active Robot Info
+        const activeName = data.robot || data.robot_name || currentRobot;
+        document.getElementById('rName').textContent = activeName;
+        document.getElementById('hudRobotName').textContent = activeName;
+        document.getElementById('rBatt').textContent = data.battery + "%";
+        document.getElementById('rPose').textContent = `(${data.pos[0]}, ${data.pos[1]}, ${data.pos[2]})`;
+        document.getElementById('hudPose').textContent = `(${data.pos[0]}, ${data.pos[1]})`;
+        document.getElementById('rHeading').textContent = data.yaw_deg + "°";
+        document.getElementById('rDest').textContent = data.destination;
+        document.getElementById('hudDest').textContent = data.destination;
+        document.getElementById('rDist').textContent = data.remaining_dist + "m";
+        document.getElementById('robotStateBadge').textContent = "STATE: " + data.state;
+        document.getElementById('hudNavState').textContent = data.state;
+        document.getElementById('hudTask').textContent = data.mission || "Standing by";
+
+        // Update Clearance HUD chip
+        const clearanceChip = document.getElementById('hudClearanceChip');
+        if (data.closest_obstacle_dist < 900) {
+          document.getElementById('hudClearance').textContent = data.closest_obstacle_dist.toFixed(2) + "m";
+          if (data.closest_obstacle_dist < 1.2) {
+            clearanceChip.className = "hud-chip hud-chip-danger";
+          } else {
+            clearanceChip.className = "hud-chip";
+          }
+        } else {
+          document.getElementById('hudClearance').textContent = "CLEAR";
+          clearanceChip.className = "hud-chip";
+        }
+
+        // Render Real Physical LiDAR Points
+        renderRadar(data.lidar_points, data.closest_obstacle_dist);
+
+        // Update LiDAR badge with actual measured count
+        const validPts = data.lidar_points ? data.lidar_points.length : 0;
+        document.getElementById('lidarBadge').textContent = `${validPts} HITS • 10 HZ`;
+
+        // Update Sensor Health Matrix (Requirement 16)
+        if (data.sensor_health) {
+          Object.keys(data.sensor_health).forEach(rName => {
+            const sh = data.sensor_health[rName];
+            const camEl = document.getElementById(`diag-cam-${rName}`);
+            const camBadgeEl = document.getElementById(`diag-cam-badge-${rName}`);
+            const lidarEl = document.getElementById(`diag-lidar-${rName}`);
+            const distEl = document.getElementById(`diag-dist-${rName}`);
+
+            if (sh.camera) {
+              if (camEl) camEl.textContent = `${sh.camera.resolution} @ ${sh.camera.fps} FPS`;
+              if (camBadgeEl) {
+                camBadgeEl.textContent = sh.camera.status;
+                camBadgeEl.className = "badge " + (sh.camera.status === 'ONLINE' ? '' : (sh.camera.status === 'STALE' ? 'badge-amber' : (sh.camera.status === 'ERROR' ? 'badge-red' : 'badge-cyan')));
+              }
+              if (rName === activeName) {
+                document.getElementById('camResBadge').textContent = sh.camera.resolution;
+                document.getElementById('hudCamFps').textContent = sh.camera.fps.toFixed(1);
+              }
+            }
+
+            if (sh.lidar) {
+              if (lidarEl) lidarEl.textContent = `${sh.lidar.status} • ${sh.lidar.points} pts (${sh.lidar.rate_hz} Hz)`;
+              if (distEl) distEl.textContent = sh.lidar.min_distance_m < 900 ? `${sh.lidar.min_distance_m}m` : '--';
+            }
+          });
+        }
+
+        // Update Detected Objects table (Entity Perception)
+        const tbody = document.getElementById('objectsTableBody');
+        if (data.detected_objects && data.detected_objects.length > 0) {
+          document.getElementById('objCountBadge').textContent = data.detected_objects.length + " DETECTED";
+          tbody.innerHTML = data.detected_objects.map(obj => {
+            const distColor = obj.distance < 1.2 ? '#ef4444' : (obj.distance < 2.5 ? '#f59e0b' : '#10b981');
+            const bearingSign = obj.direction_deg > 0 ? '+' : '';
+            return `
+              <tr>
+                <td><strong style="color: #38bdf8;">${obj.id}</strong></td>
+                <td><span style="font-weight: 700; color: #a7f3d0;">${obj.type}</span></td>
+                <td style="color: ${distColor}; font-weight: 700;">${obj.distance}m</td>
+                <td>${bearingSign}${obj.direction_deg}&deg;</td>
+                <td><span style="color: #38bdf8; font-weight: 600;">${obj.status || 'DETECTED'}</span></td>
+                <td>(${obj.pos[0]}, ${obj.pos[1]})</td>
+              </tr>
+            `;
+          }).join('');
+        } else {
+          document.getElementById('objCountBadge').textContent = "0 DETECTED";
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Sensor bubble clear &bull; Scanning hospital environment</td></tr>`;
+        }
+
+        // Update 5-Tuple Reasoning
+        if (data.reasoning) {
+          document.getElementById('reasonSituation').textContent = data.reasoning.situation;
+          document.getElementById('reasonConstraints').textContent = data.reasoning.constraints;
+          document.getElementById('reasonOptions').textContent = Array.isArray(data.reasoning.options) ? data.reasoning.options.join(', ') : data.reasoning.options;
+          document.getElementById('reasonDecision').textContent = data.reasoning.decision;
+          document.getElementById('reasonAction').textContent = data.reasoning.action;
+          document.getElementById('reasonDecBadge').textContent = data.reasoning.decision;
+        }
+
+        // Update Active Robot Nearest Obstacle
+        if (data.nearest_obstacle) {
+          const no = data.nearest_obstacle;
+          const obsTxt = no.distance_m < 900 ? `${no.distance_m}m at ${no.heading_deg > 0 ? '+' : ''}${no.heading_deg}° (${no.tag})` : 'Clear (>11.5m)';
+          document.getElementById('rObstacle').textContent = obsTxt;
+        }
+
+        // Update Fleet Roster Table
+        const fleetBody = document.getElementById('fleetTableBody');
+        if (data.fleet) {
+          fleetBody.innerHTML = data.fleet.map(r => {
+            const obsStr = r.nearest_obstacle_dist !== undefined && r.nearest_obstacle_dist < 900 
+              ? `${r.nearest_obstacle_dist}m (${r.nearest_obstacle_heading_deg > 0 ? '+' : ''}${r.nearest_obstacle_heading_deg}°)` 
+              : 'Clear';
+            const obsColor = r.nearest_obstacle_dist < 1.5 ? 'var(--accent-red)' : (r.nearest_obstacle_dist < 3.0 ? 'var(--accent-amber)' : 'var(--accent-green)');
+            return `
+              <tr style="${r.is_active ? 'background: rgba(0, 240, 255, 0.08); font-weight: 700;' : ''}">
+                <td><span style="color: ${r.is_active ? 'var(--accent-cyan)' : '#e2e8f0'}">${r.name}</span></td>
+                <td><span class="badge ${r.state === 'NAVIGATING' ? 'badge-amber' : (r.state === 'EMERGENCY' ? 'badge-red' : '')}">${r.state}</span></td>
+                <td>${r.battery}%</td>
+                <td style="color: ${obsColor}; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;">${obsStr}</td>
+                <td style="color: #94a3b8;">${r.task}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+        // Update Task Allocation & Selection Factors
+        if (data.task_allocation) {
+          const ta = data.task_allocation;
+          document.getElementById('allocMissionType').textContent = ta.mission_type || '--';
+          document.getElementById('allocDestination').textContent = ta.destination || '--';
+          document.getElementById('allocWinner').textContent = ta.winner || '--';
+          document.getElementById('allocScore').textContent = ta.winner_score !== undefined ? ta.winner_score : (ta.score !== undefined ? ta.score : '--');
+          document.getElementById('allocRationale').textContent = ta.reasoning || '--';
+          document.getElementById('allocStatusBadge').textContent = `AWARDED: ${ta.winner || 'NONE'}`;
+
+          const bidsBody = document.getElementById('allocBidsTableBody');
+          if (ta.bids && ta.bids.length > 0) {
+            bidsBody.innerHTML = ta.bids.map(b => {
+              const isWinner = b.robot === ta.winner || b.robot_name === ta.winner;
+              return `
+                <tr style="${isWinner ? 'background: rgba(16, 185, 129, 0.12); font-weight: 700;' : ''}">
+                  <td><span style="color: ${isWinner ? 'var(--accent-green)' : '#e2e8f0'}">${b.robot || b.robot_name}</span></td>
+                  <td><span style="color: var(--accent-cyan);">${b.role}</span></td>
+                  <td>${b.capability}</td>
+                  <td>${b.availability}</td>
+                  <td>${b.proximity} (${b.distance_m}m)</td>
+                  <td>${b.battery}%</td>
+                  <td style="color: ${isWinner ? 'var(--accent-amber)' : '#94a3b8'}; font-weight: 700;">${b.total_score}</td>
+                  <td><span class="badge ${isWinner ? '' : 'badge-amber'}">${isWinner ? 'WINNER' : 'OUTBID'}</span></td>
+                </tr>
+              `;
+            }).join('');
+          }
+        }
+
+        // Update Events Timeline
+        if (data.events && data.events.length > 0) {
+          const tLine = document.getElementById('eventTimeline');
+          tLine.innerHTML = data.events.map(ev => `
+            <div class="timeline-item">
+              <span class="timeline-time">${ev.time}</span>
+              <span class="timeline-src">[${ev.source}]</span>
+              <span class="timeline-msg">${ev.summary}</span>
+            </div>
+          `).join('');
+        }
+
+        // Update Shared World Metrics
+        if (data.shared_world) {
+          document.getElementById('swDynamic').textContent = data.shared_world.dynamic_objects;
+          document.getElementById('swPersons').textContent = data.shared_world.known_persons;
+          document.getElementById('swBlocked').textContent = data.shared_world.blocked_corridors;
+          document.getElementById('swRobots').textContent = data.shared_world.active_robots;
+          document.getElementById('swMissions').textContent = data.shared_world.active_missions;
+          document.getElementById('swEmergency').textContent = data.shared_world.emergency_events;
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // Update Pipeline Mission ID & 4-Stage Cognitive HUD
+        // ══════════════════════════════════════════════════════════════
+        const currentMissionId = data.mission_id || "MSN-IDLE";
+        const missionIdEl = document.getElementById('pipelineMissionId');
+        if (missionIdEl) missionIdEl.textContent = currentMissionId;
+
+        // Dynamic 4-Stage Pipeline HUD active highlighting
+        const stageSense = document.getElementById('stageSense');
+        const stageUnderstand = document.getElementById('stageUnderstand');
+        const stageReason = document.getElementById('stageReason');
+        const stageAct = document.getElementById('stageAct');
+
+        // SENSE is active whenever sensors/telemetry stream
+        if (stageSense) stageSense.className = "stage-card active";
+
+        // UNDERSTAND is active when entities are detected or RFID processing
+        const hasEntities = (data.detected_objects && data.detected_objects.length > 0);
+        if (stageUnderstand) {
+          stageUnderstand.className = "stage-card " + (hasEntities ? "active" : "");
+          const understandSub = document.getElementById('stageUnderstandSub');
+          if (understandSub) {
+            understandSub.textContent = hasEntities ? `${data.detected_objects.length} Entities • NLU Synced` : "Trilingual NLU • Scanning";
+          }
+        }
+
+        // REASON is active when decision engine is operating
+        const isReasoning = data.reasoning && data.reasoning.decision && data.reasoning.decision !== 'STANDBY';
+        if (stageReason) {
+          stageReason.className = "stage-card " + (isReasoning ? "active" : "");
+          const reasonSub = document.getElementById('stageReasonSub');
+          if (reasonSub && data.reasoning) {
+            reasonSub.textContent = data.reasoning.decision ? `Decision: ${data.reasoning.decision}` : "5-Tuple Decision Engine";
+          }
+        }
+
+        // ACT is active when robot is moving or performing delivery/verification
+        const isActing = data.state === 'NAVIGATING' || data.state === 'AT_GOAL' || data.state === 'DELIVERING' || data.has_medicine_container;
+        if (stageAct) {
+          stageAct.className = "stage-card " + (isActing ? "active" : "");
+          const actSub = document.getElementById('stageActSub');
+          if (actSub) {
+            actSub.textContent = data.has_medicine_container ? "Container Attached • Handover Ready" : (isActing ? `Navigating to ${data.destination}` : "Embodied Handover • Standby");
+          }
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // Update Bedside Patient Verification & 3D Container Prim Checkpoint
+        // ══════════════════════════════════════════════════════════════
+        const hasContainer = !!data.has_medicine_container;
+        const isLocked = data.is_container_locked !== false; // defaults to true
+        const mountBadge = document.getElementById('containerMountBadge');
+        const lockBadge = document.getElementById('containerLockBadge');
+        const primBadge = document.getElementById('containerPrimBadge');
+        const lockLabel = document.getElementById('containerLockLabel');
+        const meshIcon = document.getElementById('containerMeshIcon');
+
+        if (primBadge) {
+          primBadge.textContent = hasContainer ? "PRIM: ATTACHED" : "PRIM: DETACHED";
+          primBadge.className = "badge " + (hasContainer ? "badge-cyan" : "");
+        }
+        if (mountBadge) {
+          mountBadge.textContent = hasContainer ? "MOUNTED (TRAY SECURED)" : "STANDBY / DETACHED";
+          mountBadge.className = "badge " + (hasContainer ? "" : "badge-amber");
+        }
+        if (lockBadge) {
+          lockBadge.textContent = isLocked ? "ELECTRONIC LATCH: LOCKED" : "ELECTRONIC LATCH: UNLOCKED";
+          lockBadge.className = "badge " + (isLocked ? "badge-amber" : "");
+        }
+        if (lockLabel) {
+          lockLabel.textContent = !hasContainer ? "DETACHED" : (isLocked ? "SECURED (LOCKED)" : "OPEN (UNLOCKED)");
+          lockLabel.style.color = !hasContainer ? "var(--text-muted)" : (isLocked ? "var(--accent-amber)" : "var(--accent-green)");
+        }
+        if (meshIcon) {
+          meshIcon.textContent = hasContainer ? "📦" : "📭";
+        }
+
+        // Attached medication payload
+        const payloadEl = document.getElementById('containerPayload');
+        if (payloadEl) {
+          if (data.attached_medication) {
+            const med = data.attached_medication;
+            payloadEl.innerHTML = `<span style="color: var(--accent-cyan); font-weight: 700;">${med.name || med.medicine_id}</span> &bull; Pt: <strong style="color: #fff;">${med.patient_id || med.patient_name || '--'}</strong> &bull; Bed: <strong style="color: #fff;">${med.bed || '--'}</strong>`;
+          } else if (hasContainer) {
+            payloadEl.innerHTML = `<span style="color: var(--accent-cyan);">Standard Clinical Container Attached</span> (Awaiting Dispense)`;
+          } else {
+            payloadEl.textContent = "None (Tray Empty)";
+          }
+        }
+
+        // Verification banner and checklist
+        const vResult = data.last_verification_result;
+        const vBanner = document.getElementById('verificationBanner');
+        const vTitle = document.getElementById('vBannerTitle');
+        const vDesc = document.getElementById('vBannerDesc');
+        const vCode = document.getElementById('vBannerCode');
+        const rfidBadge = document.getElementById('checkRfidBadge');
+        const roomBadge = document.getElementById('checkRoomBadge');
+
+        if (vResult && vResult.status === 'VERIFIED') {
+          if (vBanner) vBanner.className = "verification-banner v-banner-verified";
+          if (vTitle) vTitle.textContent = "VERIFIED: PATIENT & ROOM RFID CONFIRMED";
+          if (vDesc) vDesc.textContent = "Hardware interlock released. Medicine container unlocked for bedside delivery.";
+          if (vCode) { vCode.textContent = "VERIFIED"; vCode.className = "badge"; }
+          if (rfidBadge) { rfidBadge.textContent = "MATCHED (PASS)"; rfidBadge.className = "badge"; }
+          if (roomBadge) { roomBadge.textContent = "MATCHED (PASS)"; roomBadge.className = "badge"; }
+        } else if (vResult && (vResult.status === 'MISMATCH' || vResult.status === 'FAIL')) {
+          if (vBanner) vBanner.className = "verification-banner v-banner-mismatch";
+          if (vTitle) vTitle.textContent = "⚠️ SAFETY LOCKOUT: PATIENT/ROOM MISMATCH";
+          if (vDesc) vDesc.textContent = "Electronic latch LOCKED. Delivery halted to prevent medication error. Contact nursing station.";
+          if (vCode) { vCode.textContent = "LOCKOUT"; vCode.className = "badge badge-red"; }
+          if (rfidBadge) {
+            rfidBadge.textContent = vResult.patient_verified ? "MATCHED" : "MISMATCH (FAIL)";
+            rfidBadge.className = "badge " + (vResult.patient_verified ? "" : "badge-red");
+          }
+          if (roomBadge) {
+            roomBadge.textContent = vResult.room_verified ? "MATCHED" : "MISMATCH (FAIL)";
+            roomBadge.className = "badge " + (vResult.room_verified ? "" : "badge-red");
+          }
+        } else {
+          if (vBanner) vBanner.className = "verification-banner v-banner-idle";
+          if (vTitle) vTitle.textContent = hasContainer ? "SAFETY INTERLOCK: TRANSIT SECURE" : "SAFETY INTERLOCK: STANDBY";
+          if (vDesc) vDesc.textContent = hasContainer ? "Container locked during transit. Dual-factor verification triggers at bedside." : "Standing by. Dual-factor check armed for clinical dispatch.";
+          if (vCode) { vCode.textContent = hasContainer ? "TRANSIT" : "IDLE"; vCode.className = "badge badge-cyan"; }
+          if (rfidBadge) { rfidBadge.textContent = "ARMED"; rfidBadge.className = "badge badge-cyan"; }
+          if (roomBadge) { roomBadge.textContent = "ARMED"; roomBadge.className = "badge badge-cyan"; }
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // Dynamic Semantic Cost Map (Congestion Hotspots)
+        // ══════════════════════════════════════════════════════════════
+        const congList = document.getElementById('congestionList');
+        if (congList) {
+          if (data.congestion_hotspots && data.congestion_hotspots.length > 0) {
+            congList.innerHTML = data.congestion_hotspots.map(c => `
+              <div class="congestion-item" style="border-left-color: ${c.penalty > 2.0 ? 'var(--accent-red)' : 'var(--accent-amber)'};">
+                <div>
+                  <strong style="color: #f1f5f9;">${c.zone || 'Corridor Junction'}</strong>
+                  <span style="color: var(--text-muted); font-size: 0.70rem;"> [(${c.center ? c.center[0] : '0'}, ${c.center ? c.center[1] : '0'})]</span>
+                </div>
+                <div style="font-weight: 700; color: ${c.penalty > 2.0 ? 'var(--accent-red)' : 'var(--accent-amber)'};">
+                  Penalty +${c.penalty.toFixed(1)} &bull; Decaying
+                </div>
+              </div>
+            `).join('');
+          } else {
+            congList.innerHTML = `
+              <div class="congestion-item" style="border-left-color: var(--accent-green);">
+                <span>Hospital Corridors Clear</span>
+                <span style="color: var(--accent-green);">Penalty: 0.0 &bull; Nominal</span>
+              </div>
+            `;
+          }
+        }
+
+        // Active Environmental Hazards
+        const hazList = document.getElementById('activeHazardsList');
+        if (hazList) {
+          if (data.active_hazards && data.active_hazards.length > 0) {
+            hazList.innerHTML = data.active_hazards.map(h => `
+              <div style="color: #fca5a5; padding: 4px 8px; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 4px; display: flex; justify-content: space-between;">
+                <span>⚠️ ${h.zone || 'Corridor'}: ${h.type || 'Hazard'}</span>
+                <span style="font-weight: 700;">Level: ${h.level || 'WARNING'}</span>
+              </div>
+            `).join('');
+          } else {
+            hazList.innerHTML = `
+              <div style="color: var(--text-muted); padding: 4px 8px; background: rgba(30, 41, 59, 0.35); border-radius: 4px;">
+                Zero active environmental hazards reported in Shared World Model.
+              </div>
+            `;
+          }
+        }
+
+        // Fleet Self-Healing & Preemption Stack Depth
+        const battStatusEl = document.getElementById('batteryHandoffStatus');
+        if (battStatusEl) {
+          let lowBatteryDetected = false;
+          if (data.fleet) {
+            lowBatteryDetected = data.fleet.some(r => r.battery < 30);
+          } else if (data.battery < 30) {
+            lowBatteryDetected = true;
+          }
+          if (lowBatteryDetected) {
+            battStatusEl.textContent = "HANDOFF ACTIVE (<30% DETECTED)";
+            battStatusEl.style.color = "var(--accent-red)";
+          } else {
+            battStatusEl.textContent = "NOMINAL (ALL FLEET >30%)";
+            battStatusEl.style.color = "var(--accent-green)";
+          }
+        }
+
+        const preDepthEl = document.getElementById('preemptionDepthVal');
+        if (preDepthEl) {
+          const depth = data.preemption_depth || 0;
+          preDepthEl.textContent = depth > 0 ? `${depth} (PRIORITY ACTIVE)` : "0 (NO PREEMPTION)";
+          preDepthEl.style.color = depth > 0 ? "var(--accent-amber)" : "var(--accent-cyan)";
+        }
+
+      } catch (err) {
+        console.error("Telemetry update error:", err);
+      }
+    }
+
+    // Launch 10 Hz Telemetry Poller
+    setInterval(updateTelemetry, 100);
+    updateTelemetry();
+  </script>
+</body>
+</html>

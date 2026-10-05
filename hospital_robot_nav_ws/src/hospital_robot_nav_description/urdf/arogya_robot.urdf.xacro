@@ -1,0 +1,443 @@
+<?xml version="1.0"?>
+<!--
+  Arogya Hospital Service Robot — URDF Model
+  =============================================
+  Professional autonomous hospital assistance robot.
+  
+  Design: Tall mobile service robot with stable differential-drive base,
+  medicine tray, display head, LiDAR, RGB-D camera, mic array, speaker.
+  
+  Dimensions:
+    - Base:   0.50m diameter, 0.12m height (low CG for stability)
+    - Torso:  0.38m wide × 0.80m tall cylinder  
+    - Head:   0.30m diameter sphere (display visor)
+    - Total height: ~1.40m (professional service robot scale)
+    - Medicine tray at 0.65m
+    
+  Sensor frames:
+    - base_scan    (LiDAR, at base top)
+    - camera_link  (RGB-D, head-mounted)
+    - mic_link     (microphone array, head top)
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="arogya_robot">
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Material Definitions                                                    -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <material name="base_navy">
+    <color rgba="0.08 0.12 0.22 1.0"/>
+  </material>
+  <material name="torso_white">
+    <color rgba="0.95 0.97 1.0 1.0"/>
+  </material>
+  <material name="head_dark">
+    <color rgba="0.05 0.08 0.15 1.0"/>
+  </material>
+  <material name="tray_cyan">
+    <color rgba="0.0 0.75 0.85 1.0"/>
+  </material>
+  <material name="accent_cyan">
+    <color rgba="0.0 0.85 1.0 1.0"/>
+  </material>
+  <material name="wheel_rubber">
+    <color rgba="0.15 0.15 0.15 1.0"/>
+  </material>
+  <material name="sensor_red">
+    <color rgba="0.9 0.1 0.1 1.0"/>
+  </material>
+  <material name="sensor_green">
+    <color rgba="0.1 0.8 0.3 1.0"/>
+  </material>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Base Footprint (Ground Plane Reference)                                 -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <link name="base_footprint"/>
+
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 0.06" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Mobile Base (Differential-Drive Chassis)                                -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <cylinder radius="0.275" length="0.12"/>
+      </geometry>
+      <material name="base_navy"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.275" length="0.12"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="15.0"/>
+      <inertia ixx="0.35" ixy="0" ixz="0" iyy="0.35" iyz="0" izz="0.57"/>
+    </inertial>
+  </link>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Left Drive Wheel                                                        -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <link name="left_wheel">
+    <visual>
+      <geometry>
+        <cylinder radius="0.06" length="0.03"/>
+      </geometry>
+      <material name="wheel_rubber"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.06" length="0.03"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.5"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+  </link>
+
+  <joint name="left_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="left_wheel"/>
+    <origin xyz="0 0.25 -0.02" rpy="-1.5708 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10.0" velocity="5.0"/>
+  </joint>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Right Drive Wheel                                                       -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <link name="right_wheel">
+    <visual>
+      <geometry>
+        <cylinder radius="0.06" length="0.03"/>
+      </geometry>
+      <material name="wheel_rubber"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.06" length="0.03"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.5"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+  </link>
+
+  <joint name="right_wheel_joint" type="continuous">
+    <parent link="base_link"/>
+    <child link="right_wheel"/>
+    <origin xyz="0 -0.25 -0.02" rpy="-1.5708 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="10.0" velocity="5.0"/>
+  </joint>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Rear Caster Wheel                                                       -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <link name="caster_wheel">
+    <visual>
+      <geometry>
+        <sphere radius="0.03"/>
+      </geometry>
+      <material name="wheel_rubber"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.03"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="0.2"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+    </inertial>
+  </link>
+
+  <joint name="caster_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="caster_wheel"/>
+    <origin xyz="-0.20 0 -0.03" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Base Accent Ring (Cyan LED strip)                                       -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <link name="base_accent">
+    <visual>
+      <geometry>
+        <cylinder radius="0.285" length="0.015"/>
+      </geometry>
+      <material name="accent_cyan"/>
+    </visual>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+    </inertial>
+  </link>
+
+  <joint name="base_accent_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="base_accent"/>
+    <origin xyz="0 0 0.065" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Torso Column (Medical White)                                            -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <link name="torso_link">
+    <visual>
+      <geometry>
+        <cylinder radius="0.19" length="0.70"/>
+      </geometry>
+      <material name="torso_white"/>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder radius="0.19" length="0.70"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="8.0"/>
+      <inertia ixx="0.40" ixy="0" ixz="0" iyy="0.40" iyz="0" izz="0.15"/>
+    </inertial>
+  </link>
+
+  <joint name="torso_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="torso_link"/>
+    <origin xyz="0 0 0.42" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Medicine Delivery Tray                                                  -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <link name="tray_link">
+    <visual>
+      <geometry>
+        <box size="0.25 0.38 0.04"/>
+      </geometry>
+      <material name="tray_cyan"/>
+    </visual>
+    <collision>
+      <geometry>
+        <box size="0.25 0.38 0.04"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="1.0"/>
+      <inertia ixx="0.005" ixy="0" ixz="0" iyy="0.005" iyz="0" izz="0.005"/>
+    </inertial>
+  </link>
+
+  <joint name="tray_joint" type="fixed">
+    <parent link="torso_link"/>
+    <child link="tray_link"/>
+    <origin xyz="0.25 0 -0.05" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Shoulder / Neck Transition Ring                                         -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <link name="neck_link">
+    <visual>
+      <geometry>
+        <cylinder radius="0.12" length="0.06"/>
+      </geometry>
+      <material name="base_navy"/>
+    </visual>
+    <inertial>
+      <mass value="0.5"/>
+      <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001"/>
+    </inertial>
+  </link>
+
+  <joint name="neck_joint" type="fixed">
+    <parent link="torso_link"/>
+    <child link="neck_link"/>
+    <origin xyz="0 0 0.38" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Head (Display Visor)                                                    -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <link name="head_link">
+    <visual>
+      <geometry>
+        <sphere radius="0.15"/>
+      </geometry>
+      <material name="head_dark"/>
+    </visual>
+    <collision>
+      <geometry>
+        <sphere radius="0.15"/>
+      </geometry>
+    </collision>
+    <inertial>
+      <mass value="2.0"/>
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+    </inertial>
+  </link>
+
+  <joint name="head_joint" type="fixed">
+    <parent link="neck_link"/>
+    <child link="head_link"/>
+    <origin xyz="0 0 0.15" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Head Visor (Cyan face display) -->
+  <link name="visor_link">
+    <visual>
+      <geometry>
+        <box size="0.01 0.20 0.10"/>
+      </geometry>
+      <material name="accent_cyan"/>
+    </visual>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+    </inertial>
+  </link>
+
+  <joint name="visor_joint" type="fixed">
+    <parent link="head_link"/>
+    <child link="visor_link"/>
+    <origin xyz="0.14 0 0.0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- LiDAR Sensor (Top of Base)                                              -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <link name="base_scan">
+    <visual>
+      <geometry>
+        <cylinder radius="0.04" length="0.03"/>
+      </geometry>
+      <material name="sensor_red"/>
+    </visual>
+    <inertial>
+      <mass value="0.2"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+    </inertial>
+  </link>
+
+  <joint name="lidar_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="base_scan"/>
+    <origin xyz="0.15 0 0.08" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- RGB-D Camera (Head-Mounted)                                             -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <link name="camera_link">
+    <visual>
+      <geometry>
+        <box size="0.03 0.08 0.03"/>
+      </geometry>
+      <material name="sensor_green"/>
+    </visual>
+    <inertial>
+      <mass value="0.15"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+    </inertial>
+  </link>
+
+  <joint name="camera_joint" type="fixed">
+    <parent link="head_link"/>
+    <child link="camera_link"/>
+    <origin xyz="0.14 0 0.06" rpy="0 0.15 0"/>
+  </joint>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Microphone Array (Head Top)                                             -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <link name="mic_link">
+    <visual>
+      <geometry>
+        <cylinder radius="0.025" length="0.015"/>
+      </geometry>
+      <material name="accent_cyan"/>
+    </visual>
+    <inertial>
+      <mass value="0.05"/>
+      <inertia ixx="0.00001" ixy="0" ixz="0" iyy="0.00001" iyz="0" izz="0.00001"/>
+    </inertial>
+  </link>
+
+  <joint name="mic_joint" type="fixed">
+    <parent link="head_link"/>
+    <child link="mic_link"/>
+    <origin xyz="0 0 0.16" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Speaker (Front Torso)                                                   -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <link name="speaker_link">
+    <visual>
+      <geometry>
+        <cylinder radius="0.04" length="0.02"/>
+      </geometry>
+      <material name="base_navy"/>
+    </visual>
+    <inertial>
+      <mass value="0.1"/>
+      <inertia ixx="0.0001" ixy="0" ixz="0" iyy="0.0001" iyz="0" izz="0.0001"/>
+    </inertial>
+  </link>
+
+  <joint name="speaker_joint" type="fixed">
+    <parent link="torso_link"/>
+    <child link="speaker_link"/>
+    <origin xyz="0.19 0 0.10" rpy="0 1.5708 0"/>
+  </joint>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Status LED Indicators (Left and Right on torso)                         -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <link name="led_left">
+    <visual>
+      <geometry>
+        <sphere radius="0.015"/>
+      </geometry>
+      <material name="sensor_green"/>
+    </visual>
+    <inertial>
+      <mass value="0.01"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
+    </inertial>
+  </link>
+
+  <joint name="led_left_joint" type="fixed">
+    <parent link="torso_link"/>
+    <child link="led_left"/>
+    <origin xyz="0.17 0.08 0.30" rpy="0 0 0"/>
+  </joint>
+
+  <link name="led_right">
+    <visual>
+      <geometry>
+        <sphere radius="0.015"/>
+      </geometry>
+      <material name="sensor_green"/>
+    </visual>
+    <inertial>
+      <mass value="0.01"/>
+      <inertia ixx="0.000001" ixy="0" ixz="0" iyy="0.000001" iyz="0" izz="0.000001"/>
+    </inertial>
+  </link>
+
+  <joint name="led_right_joint" type="fixed">
+    <parent link="torso_link"/>
+    <child link="led_right"/>
+    <origin xyz="0.17 -0.08 0.30" rpy="0 0 0"/>
+  </joint>
+
+</robot>

@@ -1,0 +1,5 @@
+planner_node:
+  ros__parameters:
+    planner: "ASTAR"
+    heuristic: "DIAGONAL"
+

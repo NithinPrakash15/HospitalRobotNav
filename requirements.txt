@@ -1,0 +1,52 @@
+# ============================================================
+# HospitalRobotNav — Python Dependencies
+# Multi-Agent Autonomous Hospital Robot Navigation System
+# Compatible with Python 3.11+
+# ============================================================
+
+# Core numerical computing
+numpy>=1.26.0
+
+# Graph algorithms and hospital navigation graph
+networkx>=3.2.1
+
+# Visualization and simulation GUI
+pygame>=2.5.2
+
+# Scientific computing (path smoothing, interpolation)
+scipy>=1.11.4
+
+# 2D/3D plotting (metrics, path analysis)
+matplotlib>=3.8.2
+
+# Computer vision (future YOLO, scene understanding)
+opencv-python>=4.8.1.78
+
+# Unit testing
+pytest>=7.4.3
+pytest-cov>=4.1.0
+
+# Type checking and linting (dev tools)
+mypy>=1.7.1
+
+# Profiling support
+memory-profiler>=0.61.0
+
+# Data classes + validation
+dataclasses; python_version < "3.7"
+
+# Speech Layer & Dialogue (Offline STT/TTS)
+vosk>=0.3.45
+sounddevice>=0.4.6
+pyttsx3>=2.90
+Levenshtein>=0.25.0
+
+# Rich terminal output for logging
+rich>=13.7.0
+
+# ============================================================
+# Future ROS2 / Gazebo / Nav2 compatibility notes:
+#   pip install rclpy  (when deploying on ROS2 Humble)
+#   pip install nav2-msgs
+#   pip install sensor-msgs-py
+# ============================================================
