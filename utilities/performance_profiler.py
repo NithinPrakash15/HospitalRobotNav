@@ -16,11 +16,15 @@ Sampled periodically (e.g. 1 Hz) to prevent overhead.
 from __future__ import annotations
 
 import time
+import logging
 from contextlib import contextmanager
 from typing import Any, Dict, Generator, List, Optional
-from utilities.logger import get_logger
 
-log = get_logger(__name__)
+try:
+    from utilities.logger import get_logger
+    log = get_logger(__name__)
+except Exception:
+    log = logging.getLogger(__name__)
 
 
 class PerformanceProfiler:
@@ -97,3 +101,5 @@ class PerformanceProfiler:
 
 # Singleton instance
 PERFORMANCE_PROFILER = PerformanceProfiler()
+
+__all__ = ["PerformanceProfiler", "PERFORMANCE_PROFILER"]
