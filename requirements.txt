@@ -1,4 +1,4 @@
-﻿# ============================================================
+# ============================================================
 # HospitalRobotNav â€” Python Dependencies
 # Multi-Agent Autonomous Hospital Robot Navigation System
 # Compatible with Python 3.11+
@@ -41,6 +41,17 @@ Levenshtein>=0.25.0
 
 # Rich terminal output for logging
 rich>=13.7.0
+
+# Backend Web API, Relational Database & Authentication
+fastapi>=0.110.0
+uvicorn>=0.28.0
+sqlalchemy>=2.0.0
+pydantic>=2.6.0
+pyjwt>=2.8.0
+passlib>=1.7.4
+bcrypt>=4.1.0
+python-multipart>=0.0.9
+aiofiles>=23.2.1
 
 # ============================================================
 # Future ROS2 / Gazebo / Nav2 compatibility notes:
