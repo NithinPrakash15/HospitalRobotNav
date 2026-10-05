@@ -29,7 +29,7 @@ from tf2_ros import TransformBroadcaster
 
 from hospital_robot_nav_core.robot.robot import Robot
 from hospital_robot_nav_core.robot.robot_state import RobotState
-from hospital_robot_nav_core.simulation.physics import RobotPhysics
+from hospital_robot_nav_core.controllers.kinematics import RobotPhysics
 
 
 class RobotControllerNode(Node):

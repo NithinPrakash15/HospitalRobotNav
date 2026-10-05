@@ -1,6 +1,0 @@
-tts_node:
-  ros__parameters:
-    engine: "pyttsx3"
-    rate: 160
-    volume: 0.85
-

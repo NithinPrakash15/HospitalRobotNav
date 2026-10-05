@@ -1,9 +1,0 @@
-# Verify a patient's active prescription for a medicine
-string patient_id
-string medicine_name
----
-bool valid
-string order_id
-string dosage
-string frequency
-

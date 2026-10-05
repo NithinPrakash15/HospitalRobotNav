@@ -1,5 +1,5 @@
-# ============================================================
-# HospitalRobotNav — Python Dependencies
+﻿# ============================================================
+# HospitalRobotNav â€” Python Dependencies
 # Multi-Agent Autonomous Hospital Robot Navigation System
 # Compatible with Python 3.11+
 # ============================================================
@@ -10,8 +10,6 @@ numpy>=1.26.0
 # Graph algorithms and hospital navigation graph
 networkx>=3.2.1
 
-# Visualization and simulation GUI
-pygame>=2.5.2
 
 # Scientific computing (path smoothing, interpolation)
 scipy>=1.11.4

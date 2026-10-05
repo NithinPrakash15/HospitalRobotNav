@@ -25,20 +25,12 @@ setup(
     tests_require=["pytest"],
     entry_points={
         "console_scripts": [
-            "audio_capture_node = hospital_robot_nav_nodes.audio_capture_node:main",
-            "asr_node = hospital_robot_nav_nodes.asr_node:main",
-            "wake_word_node = hospital_robot_nav_nodes.wake_word_node:main",
-            "nlu_node = hospital_robot_nav_nodes.nlu_node:main",
-            "dialogue_node = hospital_robot_nav_nodes.dialogue_node:main",
-            "tts_node = hospital_robot_nav_nodes.tts_node:main",
-            "speech_analysis_node = hospital_robot_nav_nodes.speech_analysis_node:main",
             "semantic_map_node = hospital_robot_nav_nodes.semantic_map_node:main",
             "planner_node = hospital_robot_nav_nodes.planner_node:main",
             "obstacle_tracker_node = hospital_robot_nav_nodes.obstacle_tracker_node:main",
             "robot_controller_node = hospital_robot_nav_nodes.robot_controller_node:main",
             "mission_executor_node = hospital_robot_nav_nodes.mission_executor_node:main",
             "fleet_coordinator_node = hospital_robot_nav_nodes.fleet_coordinator_node:main",
-            "hospital_sim_node = hospital_robot_nav_nodes.hospital_sim_node:main",
         ],
     },
 )

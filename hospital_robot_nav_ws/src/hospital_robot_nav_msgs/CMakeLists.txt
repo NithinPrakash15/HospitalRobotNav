@@ -16,20 +16,14 @@ set(msg_files
   "msg/TaskStep.msg"
   "msg/MissionRequest.msg"
   "msg/MissionPlan.msg"
-  "msg/AgentBid.msg"
   "msg/AgentStatus.msg"
-  "msg/AudioChunk.msg"
-  "msg/RecognitionResult.msg"
-  "msg/SpeechAnalysis.msg"
   "msg/Detection.msg"
   "msg/DetectionArray.msg"
-  "msg/SceneDescription.msg"
 )
 
 set(srv_files
   "srv/ResolveDestination.srv"
   "srv/PlanPath.srv"
-  "srv/VerifyPrescription.srv"
 )
 
 set(action_files

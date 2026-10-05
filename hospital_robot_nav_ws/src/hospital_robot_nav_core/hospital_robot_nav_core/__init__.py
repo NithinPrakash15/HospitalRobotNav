@@ -47,10 +47,10 @@ _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def _find_project_root(start_dir: str) -> str | None:
-    """Walk upward from start_dir until a directory containing main.py is found."""
+    """Walk upward from start_dir until a directory containing requirements.txt and isaac_sim_hospital is found."""
     current = start_dir
     while True:
-        if os.path.isfile(os.path.join(current, "main.py")):
+        if os.path.isdir(os.path.join(current, "isaac_sim_hospital")) and os.path.isfile(os.path.join(current, "requirements.txt")):
             return current
         parent = os.path.dirname(current)
         if parent == current:
@@ -79,7 +79,7 @@ _SUBMODULES = (
     "maps",
     "navigation",
     "planning",
-    "simulation",
+    "controllers",
     "metrics",
 )
 
