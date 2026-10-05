@@ -65,12 +65,13 @@ bash diag_nodes.sh                # node-level diagnostics
 bash diag_launch.sh               # launch diagnostics
 ```
 
-## Run the legacy Pygame simulator (no ROS 2 needed)
+## Run the AAROGYA Platform Web & Backend (No ROS 2 needed)
 
 ```bash
 cd ..   # back to project root
-python main.py
+python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
 ```
+Open `http://localhost:8000` to access the AAROGYA Web Dashboard & Isaac Sim Hub.
 
 ## Topics Overview
 

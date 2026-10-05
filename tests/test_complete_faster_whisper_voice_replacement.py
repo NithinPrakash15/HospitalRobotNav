@@ -263,12 +263,16 @@ class TestCompleteFasterWhisperVoiceReplacement(unittest.TestCase):
         # 3. Send audio_stream_end
         send_ws_json({"type": "audio_stream_end"})
 
-        # Wait for transcription and dispatch
-        time.sleep(2.0)
+        # Wait for transcription and dispatch with polling
+        cmd_tuple = None
+        for _ in range(30):
+            time.sleep(0.2)
+            cmd_tuple = self.server.poll_pending_command()
+            if cmd_tuple:
+                break
         s.close()
 
         # Verify command landed in pending commands
-        cmd_tuple = self.server.poll_pending_command()
         self.assertIsNotNone(cmd_tuple, "Command should have been transcribed and queued")
         text, source = cmd_tuple
         print(f"[TEST 2] Received through WSS pipeline: '{text}' (source: {source})")

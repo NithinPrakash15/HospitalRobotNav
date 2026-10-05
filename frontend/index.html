@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AAROGYA — Hospital Autonomous Assistance Platform</title>
+  <meta name="description" content="Multi-Agent Embodied AI Hospital Robot Integration and Management Platform with NVIDIA Isaac Sim">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/app.css">
+</head>
+<body>
+  <div id="app-container">
+    <!-- ── SIDEBAR NAVIGATION ── -->
+    <aside id="sidebar">
+      <div class="brand-header">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20M2 12h20M7 7l10 10M17 7L7 17"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title">AAROGYA</div>
+          <div class="brand-subtitle">Autonomous Health AMR</div>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <a class="nav-item active" data-view="dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a class="nav-item" data-view="simulation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+          Simulation & Isaac 3D
+        </a>
+        <a class="nav-item" data-view="map">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+          Hospital Live Map
+        </a>
+        <a class="nav-item" data-view="patients">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Patients & Beds
+        </a>
+        <a class="nav-item" data-view="prescriptions">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          Prescriptions & Rx
+        </a>
+        <a class="nav-item" data-view="tasks">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Robot Tasks
+        </a>
+        <a class="nav-item" data-view="robots">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
+          Fleet & AMRs
+        </a>
+        <a class="nav-item" data-view="medicines">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
+          Pharmacy Formulary
+        </a>
+        <a class="nav-item" data-view="staff">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Doctors & Nurses
+        </a>
+        <a class="nav-item" data-view="emergency">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Emergency Center
+        </a>
+        <a class="nav-item" data-view="logs">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          Audit & Compliance
+        </a>
+      </nav>
+
+      <div class="user-footer">
+        <div class="user-info">
+          <div class="user-avatar" id="sidebar-user-avatar">DR</div>
+          <div class="user-details">
+            <span class="user-name" id="sidebar-user-name">Dr. Sarah Patel</span>
+            <span class="user-role-badge" id="sidebar-user-role">DOCTOR</span>
+          </div>
+        </div>
+        <button class="btn-icon" id="btn-switch-user" title="Switch User / Login">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ── MAIN CONTENT AREA ── -->
+    <main id="main-content">
+      <!-- Topbar -->
+      <header class="topbar">
+        <div class="view-title-area">
+          <h1 class="view-title" id="current-view-title">Executive Dashboard</h1>
+          <span class="badge badge-active" id="system-status-indicator">
+            <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10b981;"></span>
+            Isaac Sim Hub Online
+          </span>
+        </div>
+
+        <div class="topbar-actions">
+          <!-- Voice Command Trigger -->
+          <button class="btn btn-outline" id="btn-open-voice" title="Natural Language Voice Command">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            Voice Command
+          </button>
+
+          <!-- Emergency Alert Trigger -->
+          <button class="btn btn-danger" id="btn-trigger-emergency">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            Code Blue
+          </button>
+
+          <!-- Run / Pause Simulation Toggle -->
+          <button class="btn btn-primary" id="btn-sim-toggle">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="sim-toggle-icon"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span id="sim-toggle-text">RUN SIMULATION</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- View Containers -->
+      <div class="content-body" id="view-dashboard">
+        <!-- Metrics Row -->
+        <div class="metric-grid">
+          <div class="metric-card">
+            <span class="metric-label">Inpatient Census</span>
+            <span class="metric-value" id="stat-patients-count">1</span>
+            <span class="metric-sub">ICU Bed 3 Occupied</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Active Prescriptions</span>
+            <span class="metric-value" id="stat-rx-count">2</span>
+            <span class="metric-sub">Paracetamol 650mg Active</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Autonomous AMR Fleet</span>
+            <span class="metric-value" id="stat-robots-count">4</span>
+            <span class="metric-sub">100% Operational Readiness</span>
+          </div>
+          <div class="metric-card">
+            <span class="metric-label">Pending / Active Tasks</span>
+            <span class="metric-value" id="stat-tasks-count">0</span>
+            <span class="metric-sub">Duplicate Block Guard Active</span>
+          </div>
+        </div>
+
+        <!-- Quick Action & Patient Spotlight -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+          <!-- Active Missions / Tasks -->
+          <div class="table-card">
+            <div class="table-header">
+              <span class="table-title">Current AMR Operations</span>
+              <button class="btn btn-primary" id="btn-create-task-modal">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Create Delivery Task
+              </button>
+            </div>
+            <table class="custom-table">
+              <thead>
+                <tr>
+                  <th>Task ID</th>
+                  <th>Patient / Bed</th>
+                  <th>Medicine</th>
+                  <th>Priority</th>
+                  <th>Assigned Robot</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="dashboard-tasks-table">
+                <tr><td colspan="6" style="text-align:center; color:var(--text-dim);">No active tasks in queue</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- AMR Fleet Status Summary -->
+          <div class="table-card">
+            <div class="table-header">
+              <span class="table-title">AMR Telemetry Status</span>
+            </div>
+            <div style="padding:16px; display:flex; flex-direction:column; gap:12px;" id="dashboard-fleet-summary">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW: SIMULATION & ISAAC 3D -->
+      <div class="content-body" id="view-simulation" style="display:none; padding:16px;">
+        <div class="sim-container">
+          <!-- Simulation Viewport -->
+          <div class="sim-viewport-card">
+            <div class="viewport-toolbar">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <span style="font-weight:600; font-size:13px;">Isaac Sim Synchronized Viewport</span>
+                <span class="badge badge-active" id="viewport-fps">60 FPS</span>
+              </div>
+              <div class="camera-controls">
+                <button class="btn-cam active" data-cam="FOLLOW_ROBOT">Follow Robot</button>
+                <button class="btn-cam" data-cam="FOLLOW_TASK">Follow Task</button>
+                <button class="btn-cam" data-cam="OVERVIEW">Overview</button>
+              </div>
+            </div>
+            <canvas id="hospital-canvas"></canvas>
+          </div>
+
+          <!-- Telemetry & Event Sidebar -->
+          <div class="sim-telemetry-sidebar">
+            <!-- Robot Telemetry Card -->
+            <div class="telemetry-card">
+              <div class="telemetry-card-title">
+                <span>Active AMR Telemetry</span>
+                <span class="badge badge-active" id="sim-active-robot-name">Aarogya_Delivery</span>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:12px;">
+                <div>X: <strong id="sim-pos-x">37.25</strong> m</div>
+                <div>Y: <strong id="sim-pos-y">26.00</strong> m</div>
+                <div>Yaw: <strong id="sim-yaw">0.00</strong> rad</div>
+                <div>Linear Vel: <strong id="sim-v-lin">0.00</strong> m/s</div>
+                <div>Battery: <strong id="sim-battery">98%</strong></div>
+                <div>Status: <strong id="sim-status">IDLE</strong></div>
+              </div>
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
+                  <span>Task Completion</span>
+                  <span id="sim-task-pct">0%</span>
+                </div>
+                <div class="progress-bar-container">
+                  <div class="progress-bar-fill" id="sim-task-progress-bar" style="width:0%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Terminal Realtime Stream -->
+            <div class="telemetry-card" style="flex:1;">
+              <div class="telemetry-card-title">
+                <span>Isaac Orchestrator Log Stream</span>
+                <button class="btn-cam" id="btn-clear-terminal">Clear</button>
+              </div>
+              <div class="terminal-card" id="terminal-stream">
+                <div class="terminal-line INFO">[SYSTEM] Connected to AAROGYA Isaac Sim Orchestrator.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW: HOSPITAL LIVE MAP -->
+      <div class="content-body" id="view-map" style="display:none; padding:16px;">
+        <div class="sim-viewport-card" style="height: calc(100vh - 120px);">
+          <div class="viewport-toolbar">
+            <span style="font-weight:600; font-size:14px;">Hospital Facility Spatial Map & AMR Locations (NVIDIA Isaac Coordinate Frame)</span>
+            <div style="font-size:12px; color:var(--text-muted);">Click on any room or AMR to view status</div>
+          </div>
+          <canvas id="hospital-map-canvas" style="width:100%; height:100%; background:#080d1a;"></canvas>
+        </div>
+      </div>
+
+      <!-- VIEW: PATIENTS & BEDS -->
+      <div class="content-body" id="view-patients" style="display:none;">
+        <div class="table-card">
+          <div class="table-header">
+            <span class="table-title">Admitted Inpatients & Bed Registry</span>
+            <span class="badge badge-active">ICU Occupied: Arun Patel</span>
+          </div>
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Patient ID</th>
+                <th>Full Name</th>
+                <th>MRN</th>
+                <th>Room / Bed</th>
+                <th>Primary Doctor</th>
+                <th>Admitted</th>
+                <th>Active Prescriptions</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="patients-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- VIEW: PRESCRIPTIONS & RX -->
+      <div class="content-body" id="view-prescriptions" style="display:none;">
+        <div class="table-card">
+          <div class="table-header">
+            <span class="table-title">Clinical Prescriptions & Scheduled Doses</span>
+            <button class="btn btn-primary" id="btn-create-rx-modal">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              New Prescription (Doctor Only)
+            </button>
+          </div>
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Rx ID</th>
+                <th>Patient</th>
+                <th>Medicine</th>
+                <th>Dosage / Freq</th>
+                <th>Route</th>
+                <th>Prescribed By</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="prescriptions-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- VIEW: TASKS -->
+      <div class="content-body" id="view-tasks" style="display:none;">
+        <div class="table-card">
+          <div class="table-header">
+            <span class="table-title">Autonomous Robot Delivery & Assistance Tasks</span>
+            <button class="btn btn-primary" id="btn-create-task-modal-2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Dispatch Delivery Task
+            </button>
+          </div>
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Task ID</th>
+                <th>Type</th>
+                <th>Patient & Room</th>
+                <th>Medicine</th>
+                <th>Priority</th>
+                <th>Assigned AMR</th>
+                <th>Status</th>
+                <th>Progress</th>
+                <th>Created At</th>
+              </tr>
+            </thead>
+            <tbody id="tasks-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- VIEW: FLEET & AMRS -->
+      <div class="content-body" id="view-robots" style="display:none;">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px;" id="robots-card-grid">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- VIEW: PHARMACY FORMULARY -->
+      <div class="content-body" id="view-medicines" style="display:none;">
+        <div class="table-card">
+          <div class="table-header">
+            <span class="table-title">Hospital Pharmacy Formulary & Inventory</span>
+          </div>
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Generic Name</th>
+                <th>Category</th>
+                <th>Form / Route</th>
+                <th>Strength</th>
+                <th>Stock Balance</th>
+                <th>Restricted</th>
+              </tr>
+            </thead>
+            <tbody id="medicines-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- VIEW: DOCTORS & NURSES -->
+      <div class="content-body" id="view-staff" style="display:none;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+          <div class="table-card">
+            <div class="table-header"><span class="table-title">Physician Staff</span></div>
+            <table class="custom-table">
+              <thead><tr><th>Name</th><th>Emp ID</th><th>Specialty</th></tr></thead>
+              <tbody id="doctors-table-body"></tbody>
+            </table>
+          </div>
+          <div class="table-card">
+            <div class="table-header"><span class="table-title">Nursing Staff</span></div>
+            <table class="custom-table">
+              <thead><tr><th>Name</th><th>Emp ID</th><th>Shift</th></tr></thead>
+              <tbody id="nurses-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW: EMERGENCY CENTER -->
+      <div class="content-body" id="view-emergency" style="display:none;">
+        <div style="background:rgba(239, 68, 68, 0.1); border:1px solid rgba(239,68,68,0.3); border-radius:var(--radius-lg); padding:24px; display:flex; flex-direction:column; gap:16px;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:40px; height:40px; border-radius:50%; background:var(--accent-crimson); display:flex; align-items:center; justify-content:center; color:white;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <div>
+              <h2 style="font-family:'Outfit'; font-size:20px; color:var(--accent-crimson);">Hospital Emergency Dispatch & Priority Preemption</h2>
+              <p style="font-size:13px; color:var(--text-muted);">Triggering Code Blue interrupts all routine delivery tasks and routes Garuda_Emergency AMR with life-support kit directly to the room.</p>
+            </div>
+          </div>
+          <div style="display:flex; gap:14px;">
+            <button class="btn btn-danger" onclick="AarogyaApp.quickTriggerCodeBlue('ICU-01', 'Critical cardiac alert in ICU Bed 3')">
+              Trigger Code Blue at ICU-01
+            </button>
+            <button class="btn btn-danger" onclick="AarogyaApp.quickTriggerCodeBlue('EMR-01', 'Mass casualty staging triage')">
+              Trigger Trauma Alert at EMR-01
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW: AUDIT & COMPLIANCE LOGS -->
+      <div class="content-body" id="view-logs" style="display:none;">
+        <div class="table-card">
+          <div class="table-header">
+            <span class="table-title">System Audit Trail & Authorization Log</span>
+          </div>
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Role</th>
+                <th>Action</th>
+                <th>Entity</th>
+                <th>Duplicate Flag</th>
+                <th>Auth Denied</th>
+                <th>Details</th>
+              </tr>
+            </thead>
+            <tbody id="audit-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ── MODAL: AUTHENTICATION / SWITCH USER ── -->
+  <div class="modal-backdrop" id="modal-login">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Role-Based Access Control (RBAC)</h3>
+        <button class="btn-icon" id="btn-close-login-modal">✕</button>
+      </div>
+      <p style="font-size:12px; color:var(--text-muted);">Select a designated hospital persona or enter credentials:</p>
+      
+      <!-- Quick Persona Switch Buttons -->
+      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px;">
+        <button class="btn btn-outline" style="font-size:11px;" onclick="AarogyaApp.quickLogin('doctor', 'doctor123')">
+          🩺 Dr. Sarah<br><small style="color:var(--accent-cyan)">DOCTOR</small>
+        </button>
+        <button class="btn btn-outline" style="font-size:11px;" onclick="AarogyaApp.quickLogin('nurse', 'nurse123')">
+          👩‍⚕️ Nurse Priya<br><small style="color:var(--accent-cyan)">NURSE</small>
+        </button>
+        <button class="btn btn-outline" style="font-size:11px;" onclick="AarogyaApp.quickLogin('admin', 'admin123')">
+          ⚙️ Admin<br><small style="color:var(--accent-cyan)">ADMIN</small>
+        </button>
+        <button class="btn btn-outline" style="font-size:11px;" onclick="AarogyaApp.quickLogin('patient', 'patient123')">
+          🛏️ Arun Patel<br><small style="color:var(--accent-cyan)">PATIENT</small>
+        </button>
+        <button class="btn btn-outline" style="font-size:11px;" onclick="AarogyaApp.quickLogin('visitor', 'visitor123')">
+          🚶 Vikram V.<br><small style="color:var(--accent-cyan)">VISITOR</small>
+        </button>
+      </div>
+
+      <div style="position:relative; text-align:center; margin:6px 0;">
+        <span style="background:#0f172a; padding:0 8px; font-size:11px; color:var(--text-dim);">OR ENTER CREDENTIALS</span>
+      </div>
+
+      <form id="form-login" style="display:flex; flex-direction:column; gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Username</label>
+          <input type="text" class="form-input" id="login-username" required placeholder="doctor">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-input" id="login-password" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn-primary" style="justify-content:center; margin-top:8px;">
+          Authenticate & Apply RBAC
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── MODAL: VOICE COMMAND ── -->
+  <div class="modal-backdrop" id="modal-voice">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Natural Language Voice Gateway</h3>
+        <button class="btn-icon" id="btn-close-voice-modal">✕</button>
+      </div>
+      <div class="voice-mic-pulsing" id="voice-mic-indicator" title="Click to start listening">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </div>
+      <p style="text-align:center; font-size:12px; color:var(--text-muted);" id="voice-prompt-status">
+        Speak into your microphone or enter hospital request below:
+      </p>
+
+      <div class="form-group">
+        <input type="text" class="form-input" id="voice-command-text" placeholder="e.g. 'Deliver Paracetamol to Arun Patel in ICU Bed 3' or 'Where is the Pharmacy?'">
+      </div>
+
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-primary" style="flex:1; justify-content:center;" id="btn-submit-voice">
+          Execute Voice Command
+        </button>
+      </div>
+
+      <div id="voice-result-box" style="display:none; padding:12px; background:rgba(255,255,255,0.04); border-radius:var(--radius-sm); font-size:12px; border:1px solid var(--border-subtle);"></div>
+    </div>
+  </div>
+
+  <!-- ── MODAL: CREATE DELIVERY TASK ── -->
+  <div class="modal-backdrop" id="modal-create-task">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Dispatch Autonomous Delivery Task</h3>
+        <button class="btn-icon" id="btn-close-task-modal">✕</button>
+      </div>
+      <form id="form-create-task" style="display:flex; flex-direction:column; gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Patient</label>
+          <select class="form-select" id="task-patient-select" required></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Medicine</label>
+          <select class="form-select" id="task-medicine-select" required></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <select class="form-select" id="task-priority-select">
+            <option value="NORMAL" selected>Normal</option>
+            <option value="HIGH">High (Urgent)</option>
+            <option value="EMERGENCY">Emergency (Preemptive)</option>
+            <option value="LOW">Low</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="justify-content:center; margin-top:8px;">
+          Create & Verify Task
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── MODAL: CREATE PRESCRIPTION ── -->
+  <div class="modal-backdrop" id="modal-create-rx">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Clinical Prescription Order</h3>
+        <button class="btn-icon" id="btn-close-rx-modal">✕</button>
+      </div>
+      <form id="form-create-rx" style="display:flex; flex-direction:column; gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Patient</label>
+          <select class="form-select" id="rx-patient-select" required></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Medicine</label>
+          <select class="form-select" id="rx-medicine-select" required></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Dosage</label>
+          <input type="text" class="form-input" id="rx-dosage-input" value="650mg" required>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="form-group">
+            <label class="form-label">Frequency (Hours)</label>
+            <input type="number" class="form-input" id="rx-freq-input" value="8" min="1" max="48" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Duration (Days)</label>
+            <input type="number" class="form-input" id="rx-duration-input" value="7" min="1" max="90" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="justify-content:center; margin-top:8px;">
+          Sign & Issue Prescription
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main JavaScript Bundle -->
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

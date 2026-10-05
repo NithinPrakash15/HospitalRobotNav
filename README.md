@@ -1,145 +1,186 @@
-# HospitalRobotNav
+# AAROGYA — Hospital Autonomous Assistance Platform
 
-Research-grade simulator for:
+> **Final-Year Research Project:**  
+> *"Multi-Agent Embodied AI Robot for Autonomous Hospital Assistance using Vision-Language Reasoning"*
 
-**Multi-Agent Embodied AI Robot for Autonomous Hospital Assistance using Vision-Language Reasoning**
+---
 
-HospitalRobotNav is a modular hospital service robot platform for autonomous navigation, speech-driven mission planning, medicine delivery simulation, patient assistance workflows, multi-agent task allocation, dashboard visualization, and future ROS2/Nav2 deployment.
+## 🏥 Platform Overview
 
-## What It Does
+**AAROGYA** is a production-grade autonomous hospital robotics and multi-agent coordination platform. It integrates a relational hospital management system, strict clinical role-based access control (RBAC), multi-agent contract-net dispatching, offline and online natural language voice gateways, and **NVIDIA Isaac Sim** as the primary and final 3D photorealistic digital twin simulation environment.
 
-- Builds a semantic hospital map with reception, pharmacy, emergency, ICU, operation theatre, patient rooms, laboratory, radiology, nurse station, storage, and charging dock.
-- Plans paths with A*, Dijkstra, Theta*, Hybrid A*, and D* Lite style dynamic replanning support.
-- Understands offline spoken/text commands through wake word, speech recognition adapters, rule-based NLU, entity extraction, and dialogue management.
-- Converts one request into ordered mission steps such as navigate, collect medicine, deliver item, call nurse, guide patient, or return to dock.
-- Simulates medicine pickup and delivery with mission lifecycle events.
-- Displays a live Pygame dashboard with robot state, battery, mission progress, analytics, transcript, and event log.
-- Supports multi-agent fleet allocation through delivery, reception, and emergency agent roles.
-- Provides AI integration boundaries for LLMs, VLMs, object detection, QR verification, patient identification, and EMR connectivity.
-- Keeps a ROS2-ready architecture through clean module boundaries and an event bus that maps naturally to topics, services, and actions.
+```
++-----------------------------------------------------------------------------------+
+|                           AAROGYA WEB APPLICATION                                 |
+|   Role-Based Dashboards | Interactive Isaac Canvas | 10Hz Telemetry | Voice Mic   |
++-----------------------------------------+-----------------------------------------+
+                                          | REST API + WebSockets
+                                          v
++-----------------------------------------------------------------------------------+
+|                               FASTAPI BACKEND HUB                                 |
+|  - JWT + Bcrypt Auth & RBAC (Admin, Doctor, Nurse, Patient, Visitor)             |
+|  - Clinical Medication Safety Engine (Duplicate Task Prevention, Discontinued Rx) |
+|  - Multi-Agent Task Dispatcher & Preemption Stack                                 |
+|  - 10Hz Telemetry & Camera Director Orchestrator                                 |
++-------------------+-------------------------------------+-------------------------+
+                    |                                     |
+                    v                                     v
++-----------------------------------+   +-------------------------------------------+
+|       RELATIONAL DATABASE         |   |         NVIDIA ISAAC SIM 5.1.0            |
+| - SQLite / PostgreSQL             |   | - 28-Department Grand Digital Twin        |
+| - SQLAlchemy 2.0 ORM              |   | - Triple-Layer Collision Guard            |
+| - Departments, Rooms, Beds        |   | - Dynamic Obstacle Detours & A*           |
+| - Patients, Prescriptions, Tasks  |   | - 4 Autonomous AMRs (Delivery, Guide, etc)|
+| - AMRs, Schedules, Audit Logs     |   | - Camera Director (Follow, Task, Overview)|
++-----------------------------------+   +-------------------------------------------+
+```
 
-## Quick Start (Legacy Pygame Simulator)
+---
 
+## ✨ Key System Capabilities
+
+### 1. 🛡️ Clinical Role-Based Access Control (RBAC) & Voice Security
+- **Role Hierarchy**: `ADMIN`, `DOCTOR`, `NURSE`, `PATIENT`, `VISITOR`.
+- **Stateless JWT Tokens**: Issued via `/api/auth/login` using secure `bcrypt` credential hashing.
+- **Voice Input Rule**: Voice is strictly an *input channel*, **never** an authorization bypass.
+  - An unauthorized visitor attempting to order medication delivery (e.g. *"Deliver morphine to ICU"*) receives an immediate `403 Forbidden` / `ACCESS DENIED` audit alert.
+  - Visitors are permitted to ask general navigation questions (e.g. *"Where is the pharmacy?"* or *"Where is Dr. Sharma's clinic?"*) which routes to the `Nandi_Guide` reception AMR.
+
+### 2. 💊 Medication Management & Duplicate Task Prevention
+- **Automated Long-Term Schedules**: When a physician creates an active prescription (e.g., *Paracetamol 650mg every 8 hours for 7 days*), the medication engine generates timestamped administration slots across the full duration.
+- **Clinical Safety Guards**:
+  - Automatically rejects delivery orders for **discontinued** prescriptions (`400 Bad Request`).
+  - Automatically rejects delivery orders for **discharged** patients (`400 Bad Request`).
+- **Backend/DB-Level Duplicate Prevention**:
+  - If a delivery mission is already pending or in progress for a given patient and medication, any subsequent dispatch attempt triggers a `409 Conflict`.
+  - The response payload returns the existing task ID, assigned AMR, status, and creation time, preventing accidental hospital double-dosing.
+
+### 3. 🤖 Multi-Agent Fleet & Emergency Preemption
+- **Fleet Allocation**:
+  - `Aarogya_Delivery`: Pharmaceutical and medical supply delivery AMR.
+  - `Nandi_Guide`: Visitor guidance, reception, and patient intake AMR.
+  - `Garuda_Emergency`: Code Blue emergency crash cart response AMR.
+  - `Dhanvantari_General`: General ward specimen and equipment transit AMR.
+- **Priority Preemption**:
+  - When **Code Blue** is triggered (via Web UI or voice), routine delivery tasks are placed on an interruption stack.
+  - `Garuda_Emergency` is dispatched with preemption authority, navigating directly to the critical room.
+
+### 4. 🌐 Modern Glassmorphic Web Application (SPA)
+- **Zero External Dependencies**: Pure Vanilla HTML5, CSS3, and JavaScript, served directly by FastAPI.
+- **Interactive 2D Spatial Canvas**: Real-time rendering of all 28 departments, corridors, patient beds (e.g. ICU Bed 3), and AMR poses matching Isaac Sim world coordinates `(x, y, yaw)`.
+- **Camera Director**: Real-time switching between `FOLLOW_ROBOT`, `FOLLOW_TASK`, and `OVERVIEW` modes.
+- **10Hz Telemetry & Terminal**: Live WebSocket `/ws/telemetry` streaming robot coordinates, battery state of charge, mission progress bars, and audit logs.
+
+---
+
+## 🚀 Quick Start
+
+### 1. Prerequisites
+- Python 3.10+ (tested on Python 3.10 through 3.13)
+- Windows 10/11 or Ubuntu Linux
+
+### 2. Installation
 ```bash
+# Clone the repository
+git clone https://github.com/your-org/HospitalRobotNav.git
+cd HospitalRobotNav
+
+# Install required packages
 pip install -r requirements.txt
-python main.py
 ```
 
-Run tests:
+### 3. Launching the AAROGYA Platform
+Simply double-click `run_aarogya_platform.bat` or run:
 
 ```bash
-python -m pytest tests/ --tb=short -q
+python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-## ROS 2 Workspace
+Then open your browser to **`http://localhost:8000`**.
 
-The repository includes a complete, build-ready **ROS 2 (Jazzy/Humble)** colcon
-workspace at [`hospital_robot_nav_ws/`](hospital_robot_nav_ws/README.md). It
-migrates the entire platform — including the full offline
-**Speech → STT → NLU → Dialogue → TTS** pipeline — into first-class ROS 2
-nodes, while keeping the legacy Pygame simulator runnable.
+### 4. Default Seed Personas (RBAC Demo)
 
-Workspace layout:
+| Persona | Username | Password | Role | Permitted Actions |
+| --- | --- | --- | --- | --- |
+| **Dr. Sarah Patel** | `doctor` | `doctor123` | `DOCTOR` | Issue Prescriptions, Discontinue Rx, Dispatch AMRs, View All |
+| **Nurse Priya Sharma** | `nurse` | `nurse123` | `NURSE` | Dispatch Delivery AMRs, View Inpatients, View Tasks |
+| **System Admin** | `admin` | `admin123` | `ADMIN` | Full System Access, Emergency Dispatch, Fleet Control |
+| **Arun Patel** | `patient` | `patient123` | `PATIENT` | View Personal Room (ICU Bed 3) & Active Prescriptions |
+| **Vikram V.** | `visitor` | `visitor123` | `VISITOR` | Reception Navigation Inquiries (No Clinical Dispatch) |
 
-```
-hospital_robot_nav_ws/
-├── src/
-│   ├── hospital_robot_nav_msgs/     # Custom msg / srv / action interfaces
-│   ├── hospital_robot_nav_core/     # Pure-Python logic library (no ROS2)
-│   ├── hospital_robot_nav_nodes/    # 14 ROS 2 node implementations
-│   └── hospital_robot_nav_bringup/  # Launch files + YAML params
-```
+---
 
-Build & run (on a ROS 2 system — e.g., WSL2 Ubuntu or a Linux robot PC):
+## 🎮 NVIDIA Isaac Sim 3D Digital Twin
+
+NVIDIA Isaac Sim is the **primary and final** 3D simulation environment.
 
 ```bash
-cd hospital_robot_nav_ws
-colcon build --symlink-install
-source install/setup.bash
+# Launch interactive 3D simulation
+C:\isaacsim\python.bat isaac_sim_hospital\scripts\run_embodied_hospital_ai.py
 
-# Launch the full hospital system (speech + navigation + mission)
-ros2 launch hospital_robot_nav_bringup hospital_robot.launch.py
+# Launch with specific traffic density
+C:\isaacsim\python.bat isaac_sim_hospital\scripts\run_embodied_hospital_ai.py --traffic high
 
-# Or launch only the speech/TTS analysis pipeline
-ros2 launch hospital_robot_nav_bringup speech_pipeline.launch.py
-ros2 topic echo /robot/speech_analysis
+# Launch in automated headless mode
+C:\isaacsim\python.bat isaac_sim_hospital\scripts\run_embodied_hospital_ai.py --headless
 ```
 
-Key topics include `/audio/raw`, `/speech/transcript`,
-`/speech/transcript_partial`, `/wake_word/active`, `/mission/request`,
-`/mission/status`, `/robot/say`, `/robot/speech_analysis`, `/odom`,
-`/obstacles`, and `/fleet/status`.
+---
 
-Services: `/semantic_map/resolve_destination`, `/planner/plan_path`,
-`/emr/verify_prescription`.
+## 🧪 Automated Test Suite
 
-Action: `/mission/execute` (`ExecuteMission`).
+Run the full end-to-end platform and unit test suite:
 
-## Demo Controls
+```bash
+# Master Platform & RBAC Tests (8 tests)
+python -m pytest tests/test_aarogya_e2e_platform.py -v
 
-| Control | Action |
-| --- | --- |
-| Left click | Navigate to a room or grid cell |
-| Mouse wheel | Zoom |
-| Middle mouse drag | Pan |
-| Space | Pause or resume |
-| R | Reset simulation |
-| + / - | Change simulation speed |
-| M | Dispatch demo medicine delivery |
-| E | Dispatch demo emergency mission |
-| Esc | Quit |
+# Kinematics & Differential Drive Deadband Tests
+python -m pytest tests/test_kinematics.py -v
 
-## Project Structure
+# Isaac Sim Command Center & Crash Prevention Tests
+python -m pytest isaac_sim_hospital/tests/test_command_center_verification.py -v
+
+# Isaac Sim Priority 10 End-to-End Scenarios
+python -m pytest isaac_sim_hospital/tests/test_priority_10_end_to_end.py -v
+
+# Isaac Sim Master Correction & Collision Guard Tests
+python -m pytest isaac_sim_hospital/tests/test_master_correction_features.py -v
+```
+
+---
+
+## 📁 Repository Directory Structure
 
 ```text
 HospitalRobotNav/
-  agents/          Multi-agent roles, registry, and coordinator
-  ai_interfaces/   LLM, VLM, detector, QR, patient ID, and EMR adapters
-  algorithms/      A*, Dijkstra, Theta*, Hybrid A*, D* Lite planners
-  config/          Display, hospital, robot, and application settings
-  dashboard/       Mission, speech, and analytics dashboard panels
-  docs/            Architecture, ROS2, mission, AI, and IEEE docs
-  environment/     Occupancy grid, obstacles, semantic map, navigation graph
-  language/        Intent parser, entity extractor, dialogue manager
-  maps/            Hospital map and room definitions
-  missions/        Mission planner, executor, medicine workflow, assistance
-  navigation/      Path smoothing and collision checks
-  robot/           Robot entity, FSM, and battery model
-  simulation/      Simulator, physics, and clock
-  speech/          Wake word, audio capture, STT, and TTS adapters
-  tests/           Unit and integration tests
-  utilities/       Event bus, logging, geometry, priority queues
-  visualization/   Renderer, camera, HUD
+├── ai_reasoning/            # Natural Language Understanding & Mission Parser
+├── backend/                 # FastAPI REST Hub, Auth (JWT+Bcrypt), Simulation Orchestrator
+├── config/                  # Facility & AMR configuration settings
+├── controllers/             # Differential robot kinematics & motion profiles
+├── data/                    # aarogya.db (SQLite database)
+├── database/                # SQLAlchemy 2.0 Models, Session Factory, Seed Data
+├── frontend/                # Single-Page Web Application
+│   ├── index.html           # Master glassmorphic UI
+│   └── static/
+│       ├── css/app.css      # Dark glassmorphic design system
+│       └── js/app.js        # RBAC, WebSocket telemetry, 2D canvas, Voice Gateway
+├── hospital_robot_nav_ws/   # ROS 2 Colcon workspace (bridge, odom, cmd_vel)
+├── isaac_sim_hospital/      # NVIDIA Isaac Sim 5.1.0 Digital Twin
+│   ├── environments/        # 28-Department 3D Hospital Stage & Furniture
+│   ├── navigation/          # Triple-Layer Collision Guard & A* Detour Planner
+│   ├── robots/              # AMR URDFs, Kinematics, and State Machines
+│   ├── scripts/             # run_embodied_hospital_ai.py
+│   └── tests/               # E2E Isaac Sim validation suite
+├── multi_agent/             # Contract-Net Bidding & Fleet Coordination
+├── navigation/              # Spatial route planning and collision avoidance
+├── sensors/                 # Camera & 2D/3D LiDAR sensor managers
+├── speech/                  # Offline faster-whisper STT & Windows SAPI TTS
+├── tests/                   # Master end-to-end platform test suite
+└── run_aarogya_platform.bat # One-click platform launcher
 ```
 
-## Documentation
+---
 
-- [Architecture](docs/architecture.md)
-- [ROS2 Migration](docs/ros2_migration.md)
-- [Speech System](docs/speech_system.md)
-- [NLU Pipeline](docs/nlu_pipeline.md)
-- [Mission System](docs/mission_system.md)
-- [Multi-Agent System](docs/multi_agent.md)
-- [AI Integration](docs/ai_integration.md)
-- [IEEE Paper Outline](docs/ieee_paper_outline.md)
-- [Phase 4-8 Completion](docs/phase_4_to_8_completion.md)
-- [Algorithms](docs/algorithms.md)
-- [API Reference](docs/api_reference.md)
-
-## ROS2 Roadmap
-
-The current simulator is intentionally structured so each major subsystem can become a ROS2 node:
-
-| Current Module | ROS2 Mapping |
-| --- | --- |
-| `utilities.event_bus` | Topics, services, actions |
-| `environment.semantic_map` | Semantic map service |
-| `missions.mission_executor` | Mission action server |
-| `agents.coordinator` | Fleet coordinator lifecycle node |
-| `robot.robot` | Robot state and odometry publisher |
-| `ai_interfaces` | LLM/VLM/perception service nodes |
-| `visualization` | RViz2 and Gazebo/Isaac Sim visualization |
-
-## Research Focus
-
-This project is suitable for IEEE-style demonstrations around semantic hospital navigation, spoken task grounding, classical planning under dynamic obstacles, simulated embodied AI workflows, and scalable multi-agent coordination for hospital assistance robots.
+## 📜 License
+Academic Research Project — Indian Institute of Technology / Autonomous Hospital Robotics Lab.

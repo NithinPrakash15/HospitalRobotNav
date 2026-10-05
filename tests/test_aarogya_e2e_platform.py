@@ -199,3 +199,22 @@ def test_camera_modes(client):
     r3 = client.post("/api/simulation/camera", json={"mode": "FOLLOW_TASK"})
     assert r3.status_code == 200
     assert r3.json()["camera"]["mode"] == "FOLLOW_TASK"
+
+
+def test_frontend_assets_and_index_served(client):
+    """Verify frontend single-page application and static CSS/JS assets are served."""
+    # Index HTML
+    res_index = client.get("/")
+    assert res_index.status_code == 200
+    assert "AAROGYA" in res_index.text
+    assert "Hospital Autonomous Assistance Platform" in res_index.text
+
+    # Static CSS
+    res_css = client.get("/static/css/app.css")
+    assert res_css.status_code == 200
+    assert "--bg-primary" in res_css.text
+
+    # Static JS
+    res_js = client.get("/static/js/app.js")
+    assert res_js.status_code == 200
+    assert "AarogyaApp" in res_js.text
