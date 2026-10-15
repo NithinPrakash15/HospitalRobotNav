@@ -61,7 +61,26 @@ class PreemptedTaskContext:
     current_waypoint_idx: int
     total_waypoints: int
     remaining_waypoints: List[Any]
-    saved_timestamp: float = field(default_factory=time.time)
+@dataclass
+class ExplainableAuctionTrace:
+    """Explainable 5-tuple auction trace for task allocation."""
+    winner: str
+    score: float
+    reasoning: str
+    bids: Dict[str, float]
+    capability_fit: Dict[str, Any]
+    agent: Optional[Any] = None
+
+    def __iter__(self):
+        yield self.agent
+        yield self
+
+    def __getitem__(self, idx: int):
+        if idx == 0:
+            return self.agent
+        elif idx == 1:
+            return self
+        raise IndexError("ExplainableAuctionTrace index out of range")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -350,6 +369,67 @@ class HospitalAgentManager:
             pass
 
         return winner_agent, winner_bid, explanation
+
+    def assign_mission_with_explainability(
+        self,
+        mission_spec: EmbodiedMissionSpec,
+        fleet_robots: Optional[Dict[str, Any]] = None,
+    ) -> ExplainableAuctionTrace:
+        """
+        Allocate a mission to the best agent and return a structured ExplainableAuctionTrace (5-tuple).
+        """
+        if fleet_robots:
+            task_type = getattr(mission_spec, "task_type", "MEDICINE_DELIVERY")
+            dest_dept = getattr(mission_spec, "dest_dept", "ICU-01")
+            prio = getattr(mission_spec, "priority_level", 3)
+            dest_coords = (34.5, 33.0)
+            if hasattr(mission_spec, "dest_coords") and mission_spec.dest_coords:
+                dest_coords = mission_spec.dest_coords
+
+            winner_robot, bid_score, rationale, bids_list = self.allocate_fleet_mission(
+                task_type, dest_dept, prio, fleet_robots, dest_coords
+            )
+            cap_fit = {}
+            bids_map = {}
+            for b in bids_list:
+                r_name = b.get("robot") or b.get("robot_name", "")
+                bids_map[r_name] = float(b.get("total_score", 0.0))
+                cap_fit[r_name] = b.get("capability_fit", "Standard")
+
+            trace = ExplainableAuctionTrace(
+                winner=winner_robot.name if hasattr(winner_robot, "name") else str(winner_robot),
+                score=float(bid_score),
+                reasoning=str(rationale),
+                bids=bids_map,
+                capability_fit=cap_fit,
+                agent=winner_robot,
+            )
+            self.last_auction_trace = {
+                "winner": trace.winner,
+                "score": trace.score,
+                "reasoning": trace.reasoning,
+                "bids": trace.bids,
+                "capability_fit": trace.capability_fit,
+            }
+            return trace
+
+        agent, bid, explanation = self.allocate_mission(mission_spec)
+        trace = ExplainableAuctionTrace(
+            winner=agent.agent_id if hasattr(agent, "agent_id") else str(agent),
+            score=bid.score if bid else 1.0,
+            reasoning=explanation,
+            bids={getattr(agent, "agent_id", "DEL"): bid.score if bid else 1.0},
+            capability_fit={getattr(agent, "agent_id", "DEL"): 1.0},
+            agent=agent,
+        )
+        self.last_auction_trace = {
+            "winner": trace.winner,
+            "score": trace.score,
+            "reasoning": trace.reasoning,
+            "bids": trace.bids,
+            "capability_fit": trace.capability_fit,
+        }
+        return trace
 
     def _record_assignment(
         self,

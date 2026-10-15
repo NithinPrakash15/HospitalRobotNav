@@ -28,7 +28,9 @@ Execution:
 
 import os
 import sys
+import io
 import time
+import math
 import numpy as np
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -47,7 +49,74 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 isaac_hospital_dir = os.path.dirname(script_dir)
 repo_root = os.path.dirname(isaac_hospital_dir)
 
+# Dual-Tee Logger: Stream in real-time to both console and sim_runtime.log
+class _TeeStream:
+    def __init__(self, original_stream, log_path):
+        self.orig = original_stream
+        self.log_path = log_path
+        self._fp = None
+        try:
+            os.makedirs(os.path.dirname(log_path), exist_ok=True)
+            self._fp = open(log_path, "a", encoding="utf-8", buffering=1)
+        except Exception:
+            pass
+
+    def write(self, data):
+        if self.orig:
+            try:
+                self.orig.write(data)
+                self.orig.flush()
+            except Exception:
+                pass
+        if self._fp:
+            try:
+                self._fp.write(data)
+                self._fp.flush()
+            except Exception:
+                pass
+
+    def flush(self):
+        if self.orig:
+            try:
+                self.orig.flush()
+            except Exception:
+                pass
+        if self._fp:
+            try:
+                self._fp.flush()
+            except Exception:
+                pass
+
+    def fileno(self):
+        if self.orig and hasattr(self.orig, "fileno"):
+            return self.orig.fileno()
+        raise io.UnsupportedOperation("fileno")
+
+    def isatty(self):
+        if self.orig and hasattr(self.orig, "isatty"):
+            return self.orig.isatty()
+        return False
+
+_runtime_log_path = os.path.join(isaac_hospital_dir, "diagnostics", "sim_runtime.log")
+try:
+    with open(_runtime_log_path, "w", encoding="utf-8") as _f:
+        _f.write("")  # Truncate at start of new run
+    sys.stdout = _TeeStream(sys.stdout, _runtime_log_path)
+    sys.stderr = _TeeStream(sys.stderr, _runtime_log_path)
+except Exception:
+    pass
+
+
+import json
 import importlib.util
+
+def _emit_startup_stage(stage_dict: dict) -> None:
+    try:
+        status_file = os.path.join(repo_root, "sim_startup_status.json")
+        with open(status_file, "w") as f:
+            json.dump(stage_dict, f)
+    except Exception:
+        pass
 
 def _protect_config_module():
     global sys
@@ -62,6 +131,26 @@ def _protect_config_module():
         mod = importlib.util.module_from_spec(spec)
         sys.modules["config"] = mod
         spec.loader.exec_module(mod)
+    # Synchronize module aliases across namespaces so web/DB_BRIDGE/SLAM_ENGINE are identical singletons
+    try:
+        import web
+        import web.database_server
+        import web.perception_server
+        sys.modules["isaac_sim_hospital.web"] = sys.modules["web"]
+        sys.modules["isaac_sim_hospital.web.database_server"] = sys.modules["web.database_server"]
+        sys.modules["isaac_sim_hospital.web.perception_server"] = sys.modules["web.perception_server"]
+    except Exception:
+        pass
+    try:
+        import navigation.slam_exploration_engine
+        import navigation.collision_guard
+        import navigation.route_planner
+        sys.modules["isaac_sim_hospital.navigation"] = sys.modules["navigation"]
+        sys.modules["isaac_sim_hospital.navigation.slam_exploration_engine"] = sys.modules["navigation.slam_exploration_engine"]
+        sys.modules["isaac_sim_hospital.navigation.collision_guard"] = sys.modules["navigation.collision_guard"]
+        sys.modules["isaac_sim_hospital.navigation.route_planner"] = sys.modules["navigation.route_planner"]
+    except Exception:
+        pass
 
 _protect_config_module()
 
@@ -130,9 +219,28 @@ print(f"  Sensors      : {'Enabled (10 Hz)' if AROGYA_FEATURES.get('enable_lidar
 print(f"  Dashboard    : {'Enabled (8 Hz)' if not disable_hud else 'Disabled'}")
 print()
 
-app_config = get_app_config(headless=is_headless)
-simulation_app = SimulationApp(app_config)
+# Determine quality profile from CLI or environment (default: balanced)
+quality_profile = "balanced"
+if "--profile" in sys.argv:
+    try:
+        p_idx = sys.argv.index("--profile") + 1
+        if p_idx < len(sys.argv):
+            quality_profile = sys.argv[p_idx].lower()
+    except Exception:
+        pass
+elif "AROGYA_QUALITY_PROFILE" in os.environ:
+    quality_profile = os.environ["AROGYA_QUALITY_PROFILE"].lower()
+
+app_config = get_app_config(headless=is_headless, profile=quality_profile)
+full_exp = os.path.join(os.environ.get("EXP_PATH", r"C:\isaacsim\apps"), "isaacsim.exp.full.kit")
+if not is_headless and os.path.exists(full_exp):
+    print(f"[GUI LAUNCH] Opening Full NVIDIA Isaac Sim GUI Window (Profile: {quality_profile.upper()}, {full_exp})...", flush=True)
+    simulation_app = SimulationApp(app_config, experience=full_exp)
+else:
+    print(f"[LAUNCH] SimulationApp initialized (Profile: {quality_profile.upper()})...", flush=True)
+    simulation_app = SimulationApp(app_config)
 _protect_config_module()
+_emit_startup_stage({"stage": "isaac_sim", "isaac_sim": True, "hospital_env": False, "robot": False, "sensors": False, "simulation_ready": False})
 
 # =============================================================================
 # STEP 2: Import Simulation & Reasoning Modules
@@ -176,6 +284,7 @@ from web import (
 )
 from sensors.camera_manager import CameraSensorManager
 from sensors.lidar_manager import LiDARSensorManager
+from sensors.follow_camera import IsaacSimFollowCamera, CameraState
 
 
 print("[OK] All Embodied AI and Simulation modules loaded successfully.")
@@ -187,24 +296,25 @@ print("[OK] All Embodied AI and Simulation modules loaded successfully.")
 
 world = World(stage_units_in_meters=1.0)
 
-# Configure RTX High-Fidelity rendering & visual clarity
+# Configure RTX High-Performance rendering optimized for RTX 4050 Laptop (6GB VRAM)
 try:
     import carb.settings
     _carb_settings = carb.settings.get_settings()
     _carb_settings.set("/rtx/post/aa/op", 2)  # High-quality Temporal Anti-Aliasing (TAA)
-    _carb_settings.set("/rtx/post/dlss/execMode", 1)  # DLSS Quality Mode
+    _carb_settings.set("/rtx/post/dlss/execMode", 1)  # DLSS Performance/Balanced Mode
     _carb_settings.set("/rtx/ambientOcclusion/enabled", True)
-    _carb_settings.set("/rtx/ambientOcclusion/rayLength", 1.5)
-    _carb_settings.set("/rtx/indirectDiffusive/enabled", True)
-    _carb_settings.set("/rtx/reflections/enabled", True)
-    _carb_settings.set("/rtx/shadows/enabled", True)
-    print("[RENDER] RTX High-Fidelity visual clarity & crisp lighting settings applied.")
+    _carb_settings.set("/rtx/ambientOcclusion/rayLength", 0.8)
+    _carb_settings.set("/rtx/indirectDiffusive/enabled", False)  # Disable multi-bounce indirect diffuse to eliminate 1.5 FPS bottleneck
+    _carb_settings.set("/rtx/reflections/enabled", False)        # Disable expensive planar ray reflections on RTX 4050
+    _carb_settings.set("/rtx/shadows/enabled", True)             # Real-time direct shadows
+    print("[RENDER] RTX 4050 Optimized settings applied (High-FPS real-time direct lighting, no heavy ray diffuse stalls).")
 except Exception:
     pass
 
 # Build grand 88m x 76m hospital with 1.30m architectural cutaway walls
 hospital_env = HospitalEnvironment(wall_height=1.30, wall_thickness=0.22, door_width=2.0)
 hospital_env.build_all()
+_emit_startup_stage({"stage": "hospital_env", "isaac_sim": True, "hospital_env": True, "robot": False, "sensors": False, "simulation_ready": False})
 
 collision_guard = hospital_env.get_collision_guard(robot_radius=0.38)
 dynamic_obstacles = DynamicObstacleManager(traffic_mode=traffic_mode)
@@ -248,6 +358,7 @@ arogya_delivery = fleet_robots["Arogya_Delivery"]
 mitra_reception = fleet_robots["Mitra_Reception"]
 garuda_emergency = fleet_robots["Garuda_Emergency"]
 sahayak_support = fleet_robots["Sahayak_Support"]
+_emit_startup_stage({"stage": "robot", "isaac_sim": True, "hospital_env": True, "robot": True, "sensors": False, "simulation_ready": False})
 
 # Initialize ROS 2 bridge connecting Isaac Sim fleet to ROS 2 topic bus
 ros2_bridge = IsaacSimROS2Bridge(fleet_robots, publish_rate_hz=10.0)
@@ -281,10 +392,11 @@ if not is_headless and not disable_hud:
     )
 
 # Launch non-blocking external web servers (8080 Perception POV, 8081 Hospital DB)
-web_thread = launch_web_interfaces(headless=is_headless, open_browser=not is_headless)
+# Note: open_browser is set to False to eliminate unwanted browser popup tabs (Section 15)
+web_thread = launch_web_interfaces(headless=is_headless, open_browser=False)
 
-# Mount and initialize physical camera & LiDAR sensors for all fleet AMRs
-camera_sensor_manager = CameraSensorManager(stage=world.stage, resolution=(1280, 720))
+# Mount and initialize physical camera & LiDAR sensors for all fleet AMRs (optimized 640x360)
+camera_sensor_manager = CameraSensorManager(stage=world.stage, resolution=(640, 360))
 lidar_sensor_manager = LiDARSensorManager()
 for r_name, r_inst in fleet_robots.items():
     camera_sensor_manager.register_robot_camera(r_name, r_inst.prim_path)
@@ -296,13 +408,17 @@ for r_name, r_inst in fleet_robots.items():
 camera_sensor_manager.select_robot("Arogya_Delivery")
 lidar_sensor_manager.select_robot("Arogya_Delivery")
 
-# 3D Overview Perspective Camera matching reference isometric angle
-set_camera_view(
-    eye=[0.0, -56.0, 48.0],
-    target=[0.0, 1.0, 0.0],
+# Initialize Isaac Sim internal follow camera controller (Sections 8-12)
+follow_camera = IsaacSimFollowCamera(
     camera_prim_path="/OmniverseKit_Persp",
+    overview_eye=(0.0, -56.0, 48.0),
+    overview_target=(0.0, 1.0, 0.0),
+    follow_distance=4.2,
+    follow_height=2.8,
+    interpolation_alpha=0.08,
 )
-print("[OK] World initialized. All 4 robots are IDLE on their designated stations.")
+_emit_startup_stage({"stage": "sensors", "isaac_sim": True, "hospital_env": True, "robot": True, "sensors": True, "simulation_ready": False})
+print("[OK] World initialized. Follow Camera online. All 4 robots IDLE on stations.")
 
 # =============================================================================
 # STEP 4: Initialize Command Interface with Two-Stage Wake Word System
@@ -470,9 +586,19 @@ print("  TRAFFIC SCENE :", traffic_mode.upper(), f"({len(dynamic_obstacles.agent
 print("=" * 80)
 print()
 
-world.reset()
+if not is_headless:
+    try:
+        set_camera_view(eye=[0.0, -56.0, 48.0], target=[0.0, 1.0, 0.0])
+        print("[CAMERA] Active Isaac Sim viewport initialized: isometric hospital overview (eye=[0.0, -56.0, 48.0], target=[0.0, 1.0, 0.0])")
+    except Exception as cam_err:
+        print(f"[CAMERA] Viewport camera initialization notice: {cam_err}")
 
-max_steps = 260 if is_headless else 10_000_000
+world.reset()
+world.play()
+_emit_startup_stage({"stage": "simulation_ready", "isaac_sim": True, "hospital_env": True, "robot": True, "sensors": True, "simulation_ready": True})
+
+is_ci_test = "--test" in sys.argv or "--ci" in sys.argv or "--smoke-test" in sys.argv
+max_steps = 260 if is_ci_test else 10_000_000
 step_count = 0
 should_quit = False
 headless_stage = 0
@@ -480,9 +606,15 @@ headless_stage = 0
 try:
     while simulation_app.is_running() and step_count < max_steps and not should_quit:
 
-        # 1. Step physics & rendering
+        # 1. Step physics & rendering (render every step in GUI mode for fluid viewport visual)
         with PERFORMANCE_PROFILER.profile("physics_render"):
-            world.step(render=True)
+            render_frame = not is_headless
+            world.step(render=render_frame)
+
+        # 1b. Step follow camera inside Isaac Sim viewport (Sections 8-12)
+        with PERFORMANCE_PROFILER.profile("follow_camera"):
+            if not is_headless and follow_camera is not None:
+                follow_camera.update(fleet_robots, dt=0.016)
 
         # 2. Update dynamic obstacles (corridors & doorways with collision guard)
         with PERFORMANCE_PROFILER.profile("dynamic_obstacles"):
@@ -500,11 +632,13 @@ try:
                 combined_obstacles = list(active_obstacle_positions) + peer_obstacles
 
                 prev_state = robot.state_machine.state
+                override_vel = ros2_bridge.cmd_vel_overrides.get(robot.name) if hasattr(ros2_bridge, "cmd_vel_overrides") else None
                 robot.step_autonomous(
                     dt=0.016,
                     dynamic_obstacle_positions=combined_obstacles,
                     dynamic_obstacle_agents=raw_agents,
                     peer_robots=fleet_robots,
+                    cmd_vel=override_vel,
                 )
                 new_state = robot.state_machine.state
                 if prev_state != new_state:
@@ -536,6 +670,7 @@ try:
                             english_text=f"{robot.name} completed {action_name} at {dest_name}. Returning to idle standby.",
                             hindi_text=f"{robot.name} का कार्य पूर्ण हुआ।",
                         )
+                        follow_camera.notify_mission_complete(robot.name)
                         if hud:
                             hud.add_log(f"✅ {robot.name}: Completed at {dest_name}")
                         if control_window:
@@ -549,18 +684,130 @@ try:
                                 status="COMPLETED",
                             )
 
+            # 3a-2. Autonomous SLAM Frontier Exploration Continuous Supervisor
+            for robot in fleet_robots.values():
+                if getattr(robot, "is_exploring", False):
+                    rem_d = float(robot.get_remaining_distance()) if hasattr(robot, "get_remaining_distance") else 0.0
+                    wps_len = len(getattr(robot, "waypoints", []))
+                    cur_w_idx = getattr(robot, "current_waypoint_idx", 0)
+                    is_at_goal = (robot.state_machine.state in (RobotState.IDLE, RobotState.MISSION_COMPLETE)) or (rem_d < 1.0 and cur_w_idx >= max(0, wps_len - 1))
+
+                    if is_at_goal and (step_count % 15 == 0):
+                        try:
+                            try:
+                                from navigation.slam_exploration_engine import SLAM_ENGINE
+                            except ImportError:
+                                from isaac_sim_hospital.navigation.slam_exploration_engine import SLAM_ENGINE
+
+                            prog = SLAM_ENGINE.get_exploration_progress()
+                            pct = float(prog.get("percent_explored", 0.0))
+                            if pct >= 90.0:
+                                robot.is_exploring = False
+                                SLAM_ENGINE.exploration_complete = True
+                                SLAM_ENGINE.save_map()
+                                print(f"\n[AUTONOMOUS EXPLORATION] 🏁 Target coverage reached ({pct:.1f}%). Exploration completed!")
+                                voice_engine.speak_command_acknowledgment(
+                                    english_text="Autonomous SLAM hospital exploration completed. Facility occupancy grid saved.",
+                                    hindi_text="अस्पताल एसएलएएम मैपिंग पूर्ण हुई। नया मानचित्र सुरक्षित कर लिया गया है।",
+                                )
+                                if hud:
+                                    hud.add_log(f"✅ SLAM Exploration Completed ({pct:.1f}%)")
+                            else:
+                                candidate_frontiers = []
+                                if hasattr(SLAM_ENGINE, "get_ranked_exploration_targets"):
+                                    candidate_frontiers = SLAM_ENGINE.get_ranked_exploration_targets(robot.x, robot.y, max_targets=10)
+                                if not candidate_frontiers:
+                                    best_f = SLAM_ENGINE.get_best_exploration_target(robot.x, robot.y)
+                                    if best_f:
+                                        candidate_frontiers = [best_f]
+
+                                new_wps = []
+                                chosen_f = None
+                                for cand_f in candidate_frontiers:
+                                    if math.hypot(cand_f[0] - robot.x, cand_f[1] - robot.y) > 1.2:
+                                        if hasattr(collision_guard, "plan_path_astar"):
+                                            raw_p = collision_guard.plan_path_astar((robot.x, robot.y), cand_f)
+                                            if raw_p and len(raw_p) >= 2:
+                                                new_wps = [np.array([p[0], p[1], 0.0]) for p in raw_p]
+                                                chosen_f = cand_f
+                                                break
+                                            else:
+                                                if hasattr(SLAM_ENGINE, "mark_frontier_unreachable"):
+                                                    SLAM_ENGINE.mark_frontier_unreachable(cand_f[0], cand_f[1], duration_sec=45.0)
+
+                                if new_wps and chosen_f:
+                                    m_sub_id = f"EXP-FRONTIER-{step_count}"
+                                    robot.assign_mission(
+                                        new_wps,
+                                        task_description="Autonomous SLAM Frontier Exploration",
+                                        destination_name=f"Frontier ({chosen_f[0]:.1f}, {chosen_f[1]:.1f})",
+                                        priority_level=4,
+                                        mission_id=m_sub_id,
+                                    )
+                                    print(f"\n[AUTONOMOUS EXPLORATION] 🗺️ {robot.name} advancing to next unmapped frontier at ({chosen_f[0]:.1f}, {chosen_f[1]:.1f}).")
+                                    if hud:
+                                        hud.add_log(f"🗺️ {robot.name} -> Frontier ({chosen_f[0]:.1f}, {chosen_f[1]:.1f})")
+                                else:
+                                    # Fallback: survey farthest clinical wing to uncover unmapped frontiers along corridors
+                                    dest_candidates = ["PHM-01", "RCT-01", "ICU-01", "RAD-01", "LAB-01", "OPD-01"]
+                                    sem_locs = hospital_env.get_semantic_locations()
+                                    dest_candidates.sort(
+                                        key=lambda loc_id: math.hypot(
+                                            robot.x - float(sem_locs.get(loc_id, {}).get("pos", (0, 0))[0]),
+                                            robot.y - float(sem_locs.get(loc_id, {}).get("pos", (0, 0))[1]),
+                                        ),
+                                        reverse=True,
+                                    )
+                                    fallback_route = []
+                                    fallback_dest = None
+                                    for cand_wing in dest_candidates:
+                                        r_cand = plan_hospital_route(robot.get_position(), cand_wing, hospital_env, collision_guard)
+                                        if r_cand and len(r_cand) >= 2:
+                                            fallback_route = r_cand
+                                            fallback_dest = cand_wing
+                                            break
+
+                                    if fallback_route:
+                                        m_sub_id = f"EXP-SURVEY-{step_count}"
+                                        robot.assign_mission(
+                                            fallback_route,
+                                            task_description=f"Corridor SLAM Survey to {fallback_dest}",
+                                            destination_name=f"Corridor ({fallback_dest})",
+                                            priority_level=4,
+                                            mission_id=m_sub_id,
+                                        )
+                                        print(f"\n[AUTONOMOUS EXPLORATION] 🔄 Unmapped frontier survey detour to {fallback_dest} ({len(fallback_route)} waypoints).")
+                                        if hud:
+                                            hud.add_log(f"🔄 {robot.name} -> Survey {fallback_dest}")
+                                    else:
+                                        robot.is_exploring = False
+                                        SLAM_ENGINE.exploration_complete = True
+                                        SLAM_ENGINE.save_map()
+                                        print(f"\n[AUTONOMOUS EXPLORATION] 🏁 All reachable frontiers and wings exhausted. SLAM map saved.")
+                                        if hud:
+                                            hud.add_log("🏁 SLAM Exploration Complete: Map Saved")
+                        except Exception as ex_err:
+                            print(f"[EXPLORATION SUPERVISOR NOTICE] {ex_err}")
+
         # 3b. Step ROS 2 bridge telemetry & topics
         with PERFORMANCE_PROFILER.profile("ros2_bridge"):
             ros2_bridge.step(current_sim_time=step_count * 0.016)
 
         # 3c. Update external Perception & POV web telemetry buffer (non-blocking)
         with PERFORMANCE_PROFILER.profile("camera_stream"):
-            # Update all camera poses with rigid-body robot movement
-            camera_sensor_manager.update_all(fleet_robots)
+            # Update internal Isaac Sim viewport follow camera (Sections 8-12)
+            follow_camera.update(fleet_robots, dt=0.016)
+            if follow_camera.tracked_robot_name and follow_camera.tracked_robot_name != camera_sensor_manager.selected_robot:
+                camera_sensor_manager.select_robot(follow_camera.tracked_robot_name)
+                lidar_sensor_manager.select_robot(follow_camera.tracked_robot_name)
 
+            # Update all camera poses with rigid-body robot movement (throttled when inactive)
             stream_active = PERCEPTION_BUFFER.is_stream_active()
-            capture_interval = 3 if stream_active else 20
-            if step_count % capture_interval == 0:
+            if stream_active or step_count % 5 == 0:
+                camera_sensor_manager.update_all(fleet_robots)
+
+            # Strictly only capture offscreen RGB render buffer if client is actively streaming
+            if stream_active and step_count % 3 == 0:
                 # Check if user switched selected robot in browser UI
                 target_robot_name = PERCEPTION_BUFFER.get_selected_robot()
                 if target_robot_name and target_robot_name != camera_sensor_manager.selected_robot:
@@ -591,25 +838,148 @@ try:
                 m_id = db_cmd.get("mission_id")
                 if cmd_type == "EMERGENCY" or db_cmd.get("is_emergency"):
                     p_room = db_cmd.get("room_id") or db_cmd.get("room", "ICU-01")
-                    print(f"\n[HOSPITAL DB ALERT] 🚨 CODE BLUE triggered from web portal for {p_room}! (MissionID: {m_id})")
+                    target_robot_name = db_cmd.get("robot") or db_cmd.get("assigned_robot") or "Garuda_Emergency"
+                    print(f"\n[HOSPITAL DB ALERT] 🚨 CODE BLUE triggered from web portal for {p_room}! (MissionID: {m_id}, Target: {target_robot_name})")
                     if cmd_interface:
                         cmd_interface.process_raw_input(
                             raw_txt or f"Code Blue in {p_room}",
                             source="web_db",
-                            target_robot="Garuda_Emergency",
+                            target_robot=target_robot_name,
                             mission_id=m_id,
                         )
                 elif cmd_type in ("DELIVER_ITEM", "DISPATCH_MEDICINE"):
                     target_loc = db_cmd.get("destination_location") or db_cmd.get("destination", "ICU-01")
                     med_name = db_cmd.get("item") or db_cmd.get("medicine", "Medication")
-                    print(f"\n[HOSPITAL DB DISPATCH] 💊 Medicine dispatch from web portal: {med_name} to {target_loc} (MissionID: {m_id})")
+                    target_robot_name = db_cmd.get("robot") or db_cmd.get("assigned_robot") or "Arogya_Delivery"
+                    print(f"\n[HOSPITAL DB DISPATCH] 💊 Medicine dispatch from web portal: {med_name} to {target_loc} (MissionID: {m_id}, Target: {target_robot_name})")
                     if cmd_interface:
                         cmd_interface.process_raw_input(
                             raw_txt or f"Deliver {med_name} to {target_loc}",
                             source="web_db",
-                            target_robot="Arogya_Delivery",
+                            target_robot=target_robot_name,
                             mission_id=m_id,
                         )
+                elif cmd_type in ("EXPLORE", "FRONTIER_EXPLORATION"):
+                    try:
+                        target_robot_name = db_cmd.get("robot") or "Arogya_Delivery"
+                        winner_robot = fleet_robots.get(target_robot_name) or arogya_delivery
+                        goal_coords = db_cmd.get("goal")
+                        m_id = db_cmd.get("mission_id") or f"EXP-{step_count}"
+                        print(f"\n[HOSPITAL DB SLAM] 🗺️ SLAM Frontier Exploration command received for {winner_robot.name}! Goal: {goal_coords} (MissionID: {m_id})")
+
+                        route = []
+                        cur_pos = winner_robot.get_position()
+                        start_xy = (float(cur_pos[0]), float(cur_pos[1]))
+
+                        if goal_coords and len(goal_coords) >= 2:
+                            gx, gy = float(goal_coords[0]), float(goal_coords[1])
+                            if math.hypot(start_xy[0] - gx, start_xy[1] - gy) > 1.0:
+                                if hasattr(collision_guard, "plan_path_astar"):
+                                    raw_p = collision_guard.plan_path_astar(start_xy, (gx, gy))
+                                    if raw_p and len(raw_p) >= 2:
+                                        route = [np.array([p[0], p[1], 0.0]) for p in raw_p]
+
+                        if not route or len(route) < 2:
+                            # 1. Query SLAM_ENGINE for ranked reachable frontier candidates
+                            try:
+                                from navigation.slam_exploration_engine import SLAM_ENGINE
+                                cand_frontiers = SLAM_ENGINE.get_ranked_exploration_targets(start_xy[0], start_xy[1], max_targets=10) if hasattr(SLAM_ENGINE, "get_ranked_exploration_targets") else []
+                                for cand_f in cand_frontiers:
+                                    if math.hypot(start_xy[0] - cand_f[0], start_xy[1] - cand_f[1]) > 1.2:
+                                        if hasattr(collision_guard, "plan_path_astar"):
+                                            raw_p = collision_guard.plan_path_astar(start_xy, cand_f)
+                                            if raw_p and len(raw_p) >= 2:
+                                                route = [np.array([p[0], p[1], 0.0]) for p in raw_p]
+                                                goal_coords = cand_f
+                                                break
+                            except Exception as ex_f:
+                                print(f"[FRONTIER TARGET RETRIEVAL NOTICE] {ex_f}")
+
+                        if not route or len(route) < 2:
+                            # 2. Fallback: survey farthest clinical wing to uncover unmapped frontiers
+                            dest_candidates = ["PHM-01", "RCT-01", "ICU-01", "RAD-01", "LAB-01", "OPD-01"]
+                            sem_locs = hospital_env.get_semantic_locations()
+                            dest_candidates.sort(
+                                key=lambda loc_id: math.hypot(
+                                    start_xy[0] - float(sem_locs.get(loc_id, {}).get("pos", (0, 0))[0]),
+                                    start_xy[1] - float(sem_locs.get(loc_id, {}).get("pos", (0, 0))[1]),
+                                ),
+                                reverse=True,
+                            )
+                            for cand in dest_candidates:
+                                r_cand = plan_hospital_route(cur_pos, cand, hospital_env, collision_guard)
+                                if r_cand and len(r_cand) >= 2:
+                                    route = r_cand
+                                    goal_coords = tuple(sem_locs.get(cand, {}).get("pos", (0, 0))[:2])
+                                    break
+
+                        if route and len(route) >= 2:
+                            winner_robot.is_exploring = True
+                            dest_label = f"Frontier ({goal_coords[0]:.1f}, {goal_coords[1]:.1f})" if (goal_coords and len(goal_coords) >= 2) else "Frontier Zone"
+                            winner_robot.assign_mission(
+                                route,
+                                task_description="Autonomous SLAM Frontier Exploration",
+                                destination_name=dest_label,
+                                priority_level=4,
+                                mission_id=m_id,
+                            )
+                            print(f"[HOSPITAL DB SLAM] 🚀 {winner_robot.name} dispatched along exploration route to {dest_label} ({len(route)} waypoints).")
+                            voice_engine.speak_command_acknowledgment(
+                                english_text=f"Autonomous SLAM frontier exploration initiated for {winner_robot.name}. Scanning unmapped hospital corridors.",
+                                hindi_text=f"स्वायत्त एसएलएएम मैपिंग प्रारंभ। {winner_robot.name} अस्पताल के नए क्षेत्रों की मैपिंग कर रहा है।",
+                            )
+                            if cmd_interface:
+                                cmd_interface.set_assigned_robot(winner_robot.name)
+                            if hud:
+                                hud.add_log(f"[{m_id}] {winner_robot.name} -> SLAM Frontier Exploration")
+                                hud.add_task(f"SLAM Exploration ({m_id})", "MED", winner_robot.name, "ACTIVE")
+                    except Exception as exp_err:
+                        print(f"[HOSPITAL DB SLAM NOTICE] Frontier routing exception handled cleanly: {exp_err}")
+                elif cmd_type == "TOGGLE_OBSTACLE":
+                    obs_id = db_cmd.get("obs_id", "DYN-OBS-01")
+                    ox = float(db_cmd.get("x", 0.0))
+                    oy = float(db_cmd.get("y", 0.0))
+                    rad = float(db_cmd.get("radius", 0.85))
+                    agent_ids = [getattr(a, "obs_id", "") for a in getattr(dynamic_obstacles, "agents", [])]
+                    if obs_id in agent_ids or any(obs_id in getattr(a, "name", "") for a in getattr(dynamic_obstacles, "agents", [])):
+                        dynamic_obstacles.clear_obstacle(obs_id)
+                        print(f"\n[HOSPITAL DB] 🟢 Dynamic corridor obstacle {obs_id} CLEARED by user.")
+                        if hud:
+                            hud.add_log(f"Obstacle {obs_id} Cleared")
+                    else:
+                        dynamic_obstacles.inject_obstacle(obs_id, ox, oy)
+                        print(f"\n[HOSPITAL DB] 🚨 Dynamic corridor obstacle {obs_id} INJECTED at ({ox:.1f}, {oy:.1f}).")
+                        if hud:
+                            hud.add_log(f"🚨 Hazard {obs_id} Placed at ({ox:.1f}, {oy:.1f})")
+                elif cmd_type == "TELEOP":
+                    target_robot_name = db_cmd.get("robot") or "Arogya_Delivery"
+                    rob = fleet_robots.get(target_robot_name)
+                    act = str(db_cmd.get("action", "stop")).lower()
+                    lin = float(db_cmd.get("linear_speed", 0.5))
+                    ang = float(db_cmd.get("angular_speed", 0.8))
+                    vx, wz = 0.0, 0.0
+                    if act == "forward":
+                        vx, wz = lin, 0.0
+                    elif act == "reverse":
+                        vx, wz = -lin, 0.0
+                    elif act in ("left", "rotate_left"):
+                        vx, wz = 0.0, ang
+                    elif act in ("right", "rotate_right"):
+                        vx, wz = 0.0, -ang
+                    elif act == "stop":
+                        vx, wz = 0.0, 0.0
+                        if rob and hasattr(rob, "stop_robot"):
+                            rob.stop_robot("Manual Teleop Stop")
+
+                    ros2_bridge.send_cmd_vel(target_robot_name, vx, wz)
+                    if rob:
+                        rob.linear_speed = vx
+                        rob.angular_speed = wz
+                        if act != "stop" and hasattr(rob, "state_machine") and rob.state_machine.state == RobotState.IDLE:
+                            rob.state_machine.transition_to(RobotState.NAVIGATING, f"Manual Teleop: {act.upper()}")
+                    print(f"\n[MANUAL TELEOP] 🕹️ {target_robot_name} -> {act.upper()} (vx={vx:.2f}, wz={wz:.2f})")
+                    if hud:
+                        hud.add_log(f"🕹️ {target_robot_name}: {act.upper()}")
 
         # 3e. Periodic Mobile Voice Console Telemetry Broadcast (~every 1 sec / 25 steps)
         if mobile_voice_server and step_count % 25 == 0:
@@ -693,8 +1063,9 @@ try:
 
                         # Two-phase route: Robot -> Pharmacy (PHM-01) -> Destination Room
                         pickup_route = plan_hospital_route(winner_robot.get_position(), "PHM-01", hospital_env, collision_guard)
-                        delivery_route = plan_hospital_route(pickup_route[-1], dest_id, hospital_env, collision_guard)
-                        full_route = pickup_route + delivery_route[1:]
+                        delivery_start = pickup_route[-1] if (pickup_route and len(pickup_route) > 0) else winner_robot.get_position()
+                        delivery_route = plan_hospital_route(delivery_start, dest_id, hospital_env, collision_guard)
+                        full_route = (pickup_route + delivery_route[1:]) if (pickup_route and len(pickup_route) > 0) else delivery_route
 
                         m_id = getattr(cmd, "mission_id", "") or generate_canonical_mission_id(cmd.cmd_type, cmd.raw_text)
                         pat_id = getattr(cmd, "patient_id", "P001") or "P001"
@@ -812,6 +1183,45 @@ try:
 
                     # ── Command: Visitor Guidance / Escort ────────────────────────────
                     elif cmd.cmd_type == CommandType.GO_LOCATION:
+                        if cmd.destination_location == "FRONTIER" or cmd.argument == "SLAM_EXPLORATION":
+                            winner_robot = fleet_robots.get("Arogya_Delivery", list(fleet_robots.values())[0])
+                            cur_pos = winner_robot.get_position()
+                            start_xy = (float(cur_pos[0]), float(cur_pos[1]))
+                            dest_candidates = ["PHM-01", "RCT-01", "ICU-01", "RAD-01", "LAB-01", "OPD-01"]
+                            sem_locs = hospital_env.get_semantic_locations()
+                            dest_candidates.sort(
+                                key=lambda loc_id: math.hypot(
+                                    start_xy[0] - float(sem_locs.get(loc_id, {}).get("pos", (0, 0))[0]),
+                                    start_xy[1] - float(sem_locs.get(loc_id, {}).get("pos", (0, 0))[1]),
+                                ),
+                                reverse=True,
+                            )
+                            route = []
+                            for cand in dest_candidates:
+                                r_cand = plan_hospital_route(cur_pos, cand, hospital_env, collision_guard)
+                                if r_cand and len(r_cand) >= 2:
+                                    route = r_cand
+                                    break
+                            m_id = getattr(cmd, "mission_id", "") or f"EXP-{step_count}"
+                            if route and len(route) >= 2:
+                                winner_robot.assign_mission(
+                                    route,
+                                    task_description="Autonomous SLAM Frontier Exploration",
+                                    destination_name="Frontier Zone",
+                                    priority_level=4,
+                                    mission_id=m_id,
+                                )
+                                voice_engine.speak_command_acknowledgment(
+                                    english_text=f"Autonomous SLAM frontier exploration initiated for {winner_robot.name}. Scanning unmapped hospital corridors.",
+                                    hindi_text=f"स्वायत्त एसएलएएम मैपिंग प्रारंभ। {winner_robot.name} अस्पताल के नए क्षेत्रों की मैपिंग कर रहा है।",
+                                )
+                                if cmd_interface:
+                                    cmd_interface.set_assigned_robot(winner_robot.name)
+                                if hud:
+                                    hud.add_log(f"[{m_id}] {winner_robot.name} -> SLAM Frontier Exploration")
+                                    hud.add_task(f"SLAM Exploration ({m_id})", "MED", winner_robot.name, "ACTIVE")
+                            continue
+
                         dest_id = cmd.destination_location or "LAB-01"
                         dest_info = hospital_env.get_semantic_locations().get(dest_id, hospital_env.get_semantic_locations()["LAB-01"])
                         dest_coords = (float(dest_info["pos"][0]), float(dest_info["pos"][1]))
@@ -1104,8 +1514,8 @@ try:
                     if hud:
                         hud.add_log(f"[ERROR] Command failed: {cmd_err}")
 
-        # 7. Automated Headless Verification Suite
-        if is_headless:
+        # 7. Automated Headless Verification Suite (Strictly when --test / --ci is explicitly passed)
+        if is_ci_test:
             if step_count == 10 and headless_stage == 0:
                 print("\n" + "=" * 75, flush=True)
                 print("[HEADLESS TEST 1] Initial IDLE state verification across all 4 AMRs...", flush=True)
@@ -1260,6 +1670,7 @@ except Exception as e:
 finally:
 
     print("\n[SHUTDOWN] Releasing resources and closing SimulationApp...", flush=True)
+    _emit_startup_stage({"stage": "offline", "isaac_sim": False, "hospital_env": False, "robot": False, "sensors": False, "simulation_ready": False})
     stop_web_interfaces()
     if 'mobile_voice_server' in locals() and mobile_voice_server is not None:
         try:

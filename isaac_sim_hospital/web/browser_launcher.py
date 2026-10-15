@@ -44,7 +44,7 @@ def _check_server_healthy(url: str, timeout_seconds: float = 3.0) -> bool:
     return False
 
 
-def _launcher_worker(open_browser: bool = True) -> None:
+def _launcher_worker(open_browser: bool = False) -> None:
     """Background worker that spins up servers and conditionally opens browser tabs."""
     global _already_launched
 
@@ -61,7 +61,7 @@ def _launcher_worker(open_browser: bool = True) -> None:
         logger.error(f"Failed to start Hospital Database Server on port 8081: {e}")
 
     if not open_browser:
-        logger.info("[AROGYA WEB] Headless mode: Browser launch suppressed.")
+        logger.info("[AROGYA WEB] Browser auto-launch suppressed (Section 15: Single unified UI).")
         return
 
     with _launcher_lock:
@@ -79,7 +79,7 @@ def _launcher_worker(open_browser: bool = True) -> None:
     if not d_healthy:
         logger.warning("[AROGYA WEB] Database server did not respond to /health in time.")
 
-    # 4. Open default browser tabs
+    # 4. Open default browser tabs only if explicitly requested
     try:
         logger.info("[AROGYA WEB] Opening Perception Dashboard at http://127.0.0.1:8080")
         webbrowser.open_new_tab("http://127.0.0.1:8080")
@@ -90,10 +90,10 @@ def _launcher_worker(open_browser: bool = True) -> None:
         logger.error(f"[AROGYA WEB] Exception opening browser tabs: {e}")
 
 
-def launch_web_interfaces(headless: bool = False, open_browser: bool = True) -> threading.Thread:
+def launch_web_interfaces(headless: bool = False, open_browser: bool = False) -> threading.Thread:
     """
     Launch Perception and Database web interfaces on background daemon threads.
-    If headless is True, browser tabs will NOT be opened automatically.
+    By default, automatic browser popups are strictly suppressed (Section 15).
     """
     should_open = open_browser and not headless
     t = threading.Thread(target=_launcher_worker, args=(should_open,), daemon=True, name="ArogyaBrowserLauncherThread")

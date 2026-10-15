@@ -1248,6 +1248,38 @@ class DynamicObstacleManager:
             for agent in self.agents
         ]
 
+    def inject_obstacle(
+        self, obs_id: str = "DYN-OBS-01", x: float = 0.0, y: float = 0.0, name: str = "Temporary Gurney", role: str = "stretcher"
+    ) -> bool:
+        """Dynamically inject an obstacle at specific corridor coordinates."""
+        for ag in self.agents:
+            if getattr(ag, "obs_id", "") == obs_id or ag.name.endswith(f"({obs_id})"):
+                return False
+        gurney = DynamicStretcher(
+            prim_path=f"/World/DynamicObstacles/{obs_id}",
+            name=f"{name} ({obs_id})",
+            waypoints=[(x, y), (x + 0.3, y), (x, y)],
+            speed=0.15,
+            corridor_axis="h",
+            corridor_center=y,
+            corridor_half_width=0.85,
+        )
+        gurney.obs_id = obs_id
+        gurney.x = float(x)
+        gurney.y = float(y)
+        self.agents.append(gurney)
+        print(f"[DynamicObstacles] 🚨 Injected obstacle {obs_id} at ({x:.2f}, {y:.2f}).")
+        return True
+
+    def clear_obstacle(self, obs_id: str = "DYN-OBS-01") -> bool:
+        """Removes a dynamically injected obstacle from the simulation world."""
+        for i, ag in enumerate(self.agents):
+            if getattr(ag, "obs_id", "") == obs_id or ag.name.endswith(f"({obs_id})"):
+                self.agents.pop(i)
+                print(f"[DynamicObstacles] 🟢 Cleared obstacle {obs_id}.")
+                return True
+        return False
+
 
 def validate_spawn_position(
     pos: Any,

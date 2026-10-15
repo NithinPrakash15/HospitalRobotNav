@@ -670,6 +670,16 @@ def _parse_natural_command_internal(raw: str) -> RobotCommand:
             priority=3,
         )
 
+    # 6b. Autonomous SLAM Frontier Exploration Commands
+    if any(k in text for k in ("slam", "explore", "frontier", "mapping", "map hospital", "start slam", "slam execution", "slam exeution")):
+        return RobotCommand(
+            cmd_type=CommandType.GO_LOCATION,
+            raw_text=raw,
+            destination_location="FRONTIER",
+            argument="SLAM_EXPLORATION",
+            priority=4,
+        )
+
     # 7. Guidance / Navigation Commands (with Malayalam / Manglish verbs)
     if any(k in text for k in ("guide", "escort", "go", "navigate", "show me", "lead", "where is", "take me", "po", "poyi", "pokoo", "chal", "le chalo")):
         dest = resolve_destination(text) or "RCT-01"

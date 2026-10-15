@@ -99,6 +99,28 @@ def _ensure_log_dir() -> str:
     return log_dir
 
 
+class WindowsSafeRotatingFileHandler(logging.handlers.RotatingFileHandler):
+    """
+    RotatingFileHandler subclass that gracefully handles Windows file locking
+    (WinError 32) when multiple processes (e.g. uvicorn reloader and worker processes)
+    have the log file open simultaneously.
+    """
+
+    def doRollover(self):
+        try:
+            if self.stream:
+                self.stream.close()
+                self.stream = None
+            super().doRollover()
+        except (PermissionError, OSError):
+            # On Windows, if another process has the log file open, renaming fails.
+            # Silently retain existing file and continue writing to it.
+            pass
+        finally:
+            if not self.stream:
+                self.stream = self._open()
+
+
 def initialize_logging(level: str = "INFO") -> None:
     """
     Initialize the root logging configuration.
@@ -131,10 +153,10 @@ def initialize_logging(level: str = "INFO") -> None:
     try:
         log_dir = _ensure_log_dir()
         log_file = os.path.join(log_dir, "hospital_robot.log")
-        file_handler = logging.handlers.RotatingFileHandler(
+        file_handler = WindowsSafeRotatingFileHandler(
             log_file,
-            maxBytes=5 * 1024 * 1024,  # 5 MB
-            backupCount=3,
+            maxBytes=20 * 1024 * 1024,  # 20 MB
+            backupCount=5,
             encoding="utf-8",
         )
         file_handler.setLevel(logging.DEBUG)

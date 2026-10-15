@@ -111,12 +111,29 @@ def plan_hospital_route(
     except Exception:
         pass
 
+    corridor_path = []
     if active_dyn_obs and len(active_dyn_obs) > 0 and hasattr(collision_guard, "plan_path_astar_dynamic"):
+        # Tier 1: Try with safe clinical clearance margin (0.68m)
         corridor_path = collision_guard.plan_path_astar_dynamic(
-            nav_start, goal_corr, dynamic_obstacles=active_dyn_obs, obstacle_radius=0.9
+            nav_start, goal_corr, dynamic_obstacles=active_dyn_obs, obstacle_radius=0.68
         )
-    else:
+        if not corridor_path:
+            # Tier 2: Try with tighter clearance margin (0.48m) to squeeze through passable corridor space
+            corridor_path = collision_guard.plan_path_astar_dynamic(
+                nav_start, goal_corr, dynamic_obstacles=active_dyn_obs, obstacle_radius=0.48
+            )
+
+    # Tier 3: If dynamic search fails, fallback to static topological corridor A*
+    if not corridor_path:
         corridor_path = collision_guard.plan_path_astar(nav_start, goal_corr)
+
+    # Tier 4: If direct corridor path is still blocked, detour via the 5.0m Central Grand Spine
+    if not corridor_path and np.hypot(nav_start[0] - goal_corr[0], nav_start[1] - goal_corr[1]) > 4.0:
+        spine_pt = (0.0, 18.0) if nav_start[1] > 5.0 else (0.0, -4.5)
+        path1 = collision_guard.plan_path_astar(nav_start, spine_pt)
+        path2 = collision_guard.plan_path_astar(spine_pt, goal_corr)
+        if path1 and path2:
+            corridor_path = path1[:-1] + path2
 
     if corridor_path and len(corridor_path) >= 2:
         for pt in corridor_path:

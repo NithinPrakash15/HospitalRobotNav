@@ -25,15 +25,15 @@ class CollisionGuard:
     def __init__(
         self,
         collision_boxes: list[tuple[float, float, float, float]] | None = None,
-        robot_radius: float = 0.38,
+        robot_radius: float = 0.32,
         grid_resolution: float = 0.25,
         grid_bounds: tuple[float, float, float, float] = (-46.0, 46.0, -40.0, 40.0),
     ) -> None:
         """
         Args:
             collision_boxes: List of (xmin, xmax, ymin, ymax) obstacle/wall bounding boxes.
-            robot_radius: Safe collision envelope radius of the AMR in meters.
-            grid_resolution: Grid cell size in meters (0.5m matches ROS 2 120x120 map).
+            robot_radius: Safe collision envelope radius of the AMR in meters (0.32m matches 0.60x0.60m chassis).
+            grid_resolution: Grid cell size in meters (0.25m matches ROS 2 stage resolution).
             grid_bounds: (xmin, xmax, ymin, ymax) of the total hospital stage footprint.
         """
         self.boxes: list[tuple[float, float, float, float]] = collision_boxes or []
@@ -45,6 +45,7 @@ class CollisionGuard:
         self.cols = int(round((self.xmax - self.xmin) / self.resolution))
         self.rows = int(round((self.ymax - self.ymin) / self.resolution))
 
+        self.raw_occupancy_grid: np.ndarray | None = None
         self.occupancy_grid: np.ndarray | None = None
         self._bin_size = 4.0
         self._spatial_bins: dict[tuple[int, int], list[tuple[float, float, float, float]]] = {}
@@ -127,42 +128,21 @@ class CollisionGuard:
     ) -> bool:
         """
         Check if straight line segment between (x1, y1) and (x2, y2) is 100% collision-free.
-        Optimized with occupancy grid fast checks and spatial-bin accelerated evaluations.
+        Uses exact continuous spatial-bin distance evaluation to prevent false blocked reports
+        caused by quantized occupancy grid over-dilation.
         """
         dist = math.hypot(x2 - x1, y2 - y1)
         if dist < 1e-4:
             return self.is_traversable(x1, y1, margin)
 
         safe_r = self.robot_radius if margin is None else margin
-
-        # If occupancy grid is ready and margin matches standard robot radius, use fast grid raymarching
-        if self.occupancy_grid is not None and abs(safe_r - self.robot_radius) < 0.08:
-            steps = int(math.ceil(dist / (self.resolution * 0.6)))
-            steps = max(2, steps)
-            grid = self.occupancy_grid
-            r_max = self.rows
-            c_max = self.cols
-            for i in range(steps + 1):
-                t = i / float(steps)
-                cx = x1 + t * (x2 - x1)
-                cy = y1 + t * (y2 - y1)
-                col = int(round((cx - self.xmin) / self.resolution))
-                row = int(round((self.ymax - cy) / self.resolution))
-                if 0 <= row < r_max and 0 <= col < c_max:
-                    if grid[row, col] == 1:
-                        return False
-                else:
-                    return False
-            return True
-
-        # Otherwise step using spatial-bin accelerated check
-        step_s = max(0.12, step_size)
-        steps = int(math.ceil(dist / step_s))
+        step_s = min(0.06, max(0.02, step_size))
+        steps = max(2, int(math.ceil(dist / step_s)))
         for i in range(steps + 1):
             t = i / float(steps)
-            curr_x = x1 + t * (x2 - x1)
-            curr_y = y1 + t * (y2 - y1)
-            if self.check_point_collision(curr_x, curr_y, margin):
+            cx = x1 + t * (x2 - x1)
+            cy = y1 + t * (y2 - y1)
+            if self.check_point_collision(cx, cy, margin=safe_r):
                 return False
         return True
 
@@ -183,8 +163,9 @@ class CollisionGuard:
         return x, y
 
     def build_occupancy_grid(self) -> np.ndarray:
-        """Construct a binary 2D grid: 0 = free corridor/room, 1 = solid wall/furniture."""
-        grid = np.zeros((self.rows, self.cols), dtype=np.uint8)
+        """Construct both raw (exact boundaries) and inflated (for A* search) 2D grids."""
+        raw_grid = np.zeros((self.rows, self.cols), dtype=np.uint8)
+        inflated_grid = np.zeros((self.rows, self.cols), dtype=np.uint8)
 
         # Rasterize all obstacle bounding boxes onto grid with inflation margin
         inflation = int(math.ceil(self.robot_radius / self.resolution))
@@ -193,17 +174,24 @@ class CollisionGuard:
             r_top, c_left = self.world_to_grid(b_xmin, b_ymax)
             r_bottom, c_right = self.world_to_grid(b_xmax, b_ymin)
 
-            # Apply bounds with inflation
+            # Raw uninflated boundaries for laser/LiDAR sensor raycasting
+            raw_r0 = max(0, min(r_top, r_bottom))
+            raw_r1 = min(self.rows, max(r_top, r_bottom) + 1)
+            raw_c0 = max(0, min(c_left, c_right))
+            raw_c1 = min(self.cols, max(c_left, c_right) + 1)
+            raw_grid[raw_r0:raw_r1, raw_c0:raw_c1] = 1
+
+            # Apply bounds with inflation for A* path finding
             r0 = max(0, min(r_top, r_bottom) - inflation)
             r1 = min(self.rows, max(r_top, r_bottom) + inflation + 1)
             c0 = max(0, min(c_left, c_right) - inflation)
             c1 = min(self.cols, max(c_left, c_right) + inflation + 1)
+            inflated_grid[r0:r1, c0:c1] = 1
 
-            grid[r0:r1, c0:c1] = 1
-
-        self.occupancy_grid = grid
+        self.raw_occupancy_grid = raw_grid
+        self.occupancy_grid = inflated_grid
         self._build_spatial_bins()
-        return grid
+        return inflated_grid
 
     # ── 8-Connected A* Path Planner with Dynamic Replanning ──────────────────
 
@@ -400,13 +388,14 @@ class CollisionGuard:
 
         smoothed = [waypoints[0]]
         curr_idx = 0
+        corner_standoff = max(0.45, self.robot_radius + 0.12)
 
         while curr_idx < len(waypoints) - 1:
             furthest_idx = len(waypoints) - 1
             while furthest_idx > curr_idx + 1:
                 p1 = smoothed[-1]
                 p2 = waypoints[furthest_idx]
-                is_clear = self.is_segment_clear(p1[0], p1[1], p2[0], p2[1], margin=self.robot_radius, step_size=0.05)
+                is_clear = self.is_segment_clear(p1[0], p1[1], p2[0], p2[1], margin=corner_standoff, step_size=0.06)
                 if is_clear and dynamic_obstacles:
                     for obs in dynamic_obstacles:
                         if dist_to_segment(obs[0], obs[1], p1[0], p1[1], p2[0], p2[1]) < (obstacle_radius + 0.10):

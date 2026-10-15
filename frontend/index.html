@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AAROGYA — Hospital Autonomous Assistance Platform</title>
-  <meta name="description" content="Multi-Agent Embodied AI Hospital Robot Integration and Management Platform with NVIDIA Isaac Sim">
+  <title>AAROGYA — Hospital Autonomous Assistance Platform & Robotics Operations Console</title>
+  <meta name="description" content="Multi-Agent Embodied AI Hospital Robot Integration and Management Platform with NVIDIA Isaac Sim 5.1 — Hospital Autonomous Assistance Platform">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/app.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/app.css?v=4.0.0">
 </head>
 <body>
   <div id="app-container">
-    <!-- ── SIDEBAR NAVIGATION ── -->
+    <!-- ── COMMAND BRIDGE SIDEBAR NAVIGATION ── -->
     <aside id="sidebar">
       <div class="brand-header">
         <div class="brand-icon">
@@ -21,467 +21,1121 @@
           </svg>
         </div>
         <div>
-          <div class="brand-title">AAROGYA</div>
-          <div class="brand-subtitle">Autonomous Health AMR</div>
+          <div class="brand-title">
+            AAROGYA
+            <span class="brand-version">v5.1</span>
+          </div>
+          <div class="brand-subtitle">Autonomous Robotics Core</div>
         </div>
       </div>
 
       <nav class="nav-menu">
-        <a class="nav-item active" data-view="dashboard">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          Dashboard
+        <div class="nav-section-label">Tier 1 // Tactical Control</div>
+        <a class="nav-item active" data-view="overview" id="nav-overview">
+          <span class="nav-item-num">01</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Command Deck
         </a>
-        <a class="nav-item" data-view="simulation">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
-          Simulation & Isaac 3D
+        <a class="nav-item" data-view="simulation" id="nav-simulation">
+          <span class="nav-item-num">02</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+          Simulation Control
         </a>
-        <a class="nav-item" data-view="map">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+        <a class="nav-item" data-view="map" id="nav-map">
+          <span class="nav-item-num">03</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
           Hospital Live Map
         </a>
-        <a class="nav-item" data-view="patients">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <a class="nav-item" data-view="fleet" id="nav-fleet">
+          <span class="nav-item-num">04</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
+          Robot Fleet
+        </a>
+        <a class="nav-item" data-view="tasks" id="nav-tasks">
+          <span class="nav-item-num">05</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Missions & Tasks
+        </a>
+
+        <div class="nav-section-label">Tier 2 // Clinical Care</div>
+        <a class="nav-item" data-view="patients" id="nav-patients">
+          <span class="nav-item-num">06</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           Patients & Beds
         </a>
-        <a class="nav-item" data-view="prescriptions">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-          Prescriptions & Rx
-        </a>
-        <a class="nav-item" data-view="tasks">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          Robot Tasks
-        </a>
-        <a class="nav-item" data-view="robots">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
-          Fleet & AMRs
-        </a>
-        <a class="nav-item" data-view="medicines">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
-          Pharmacy Formulary
-        </a>
-        <a class="nav-item" data-view="staff">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <a class="nav-item" data-view="staff" id="nav-staff">
+          <span class="nav-item-num">07</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           Doctors & Nurses
         </a>
-        <a class="nav-item" data-view="emergency">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          Emergency Center
+        <a class="nav-item" data-view="pharmacy" id="nav-pharmacy">
+          <span class="nav-item-num">08</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z"/><path d="m8.5 8.5 7 7"/></svg>
+          Pharmacy
         </a>
-        <a class="nav-item" data-view="logs">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-          Audit & Compliance
+
+        <div class="nav-section-label">Tier 3 // Emergency & Audit</div>
+        <a class="nav-item" data-view="emergency" id="nav-emergency">
+          <span class="nav-item-num">09</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Emergency Centre
+        </a>
+        <a class="nav-item" data-view="health" id="nav-health">
+          <span class="nav-item-num">10</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          System Health
+        </a>
+        <a class="nav-item" data-view="logs" id="nav-logs">
+          <span class="nav-item-num">11</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+          Audit Logs
         </a>
       </nav>
 
+      <!-- Sidebar AMR Mini Monitor -->
+      <div class="sidebar-amr-strip">
+        <div class="sidebar-amr-title">
+          <span>Active AMR Fleet</span>
+          <span id="sidebar-fleet-online-count" style="color:var(--text-muted);">0/4 ONLINE</span>
+        </div>
+        <div class="sidebar-amr-grid">
+          <div class="sidebar-amr-badge">
+            <span style="color:#fff;">AR-01</span>
+            <span class="dot" id="amr-dot-delivery" style="background:#64748b;"></span>
+          </div>
+          <div class="sidebar-amr-badge">
+            <span style="color:#fff;">MI-02</span>
+            <span class="dot" id="amr-dot-reception" style="background:#64748b;"></span>
+          </div>
+          <div class="sidebar-amr-badge">
+            <span style="color:#fff;">GA-03</span>
+            <span class="dot" id="amr-dot-emergency" style="background:#64748b;"></span>
+          </div>
+          <div class="sidebar-amr-badge">
+            <span style="color:#fff;">SA-04</span>
+            <span class="dot" id="amr-dot-support" style="background:#64748b;"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- User footer -->
       <div class="user-footer">
         <div class="user-info">
           <div class="user-avatar" id="sidebar-user-avatar">DR</div>
           <div class="user-details">
-            <span class="user-name" id="sidebar-user-name">Dr. Sarah Patel</span>
+            <span class="user-name" id="sidebar-user-name">Dr. Rajesh Sharma</span>
             <span class="user-role-badge" id="sidebar-user-role">DOCTOR</span>
           </div>
         </div>
         <button class="btn-icon" id="btn-switch-user" title="Switch User / Login">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         </button>
       </div>
     </aside>
 
-    <!-- ── MAIN CONTENT AREA ── -->
+    <!-- ── MAIN COMMAND WORKSPACE ── -->
     <main id="main-content">
-      <!-- Topbar -->
+      <!-- Topbar Header -->
       <header class="topbar">
         <div class="view-title-area">
-          <h1 class="view-title" id="current-view-title">Executive Dashboard</h1>
-          <span class="badge badge-active" id="system-status-indicator">
-            <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#10b981;"></span>
-            Isaac Sim Hub Online
+          <div>
+            <h1 class="view-title" id="current-view-title">Command Deck</h1>
+            <div class="facility-breadcrumb">
+              <span>METROPOLITAN HOSPITAL</span>
+              <span>//</span>
+              <span style="color:var(--accent-cyan);">DIGITAL TWIN CORE v5.1</span>
+            </div>
+          </div>
+          <span class="badge badge-offline" id="system-status-indicator">
+            <span class="dot offline"></span>
+            <span id="system-status-text">BACKEND ONLINE — SIMULATION OFFLINE</span>
           </span>
         </div>
 
+        <!-- Telemetry Strip (Real-time Diagnostics) -->
+        <div class="topbar-telemetry-strip">
+          <div class="telemetry-item">
+            <span>ENGINE:</span>
+            <strong id="top-diag-sim" style="color:var(--text-muted);">OFFLINE</strong>
+          </div>
+          <div class="telemetry-item">
+            <span>FPS:</span>
+            <strong id="top-diag-fps" style="color:var(--text-muted);">--.- FPS</strong>
+          </div>
+          <div class="telemetry-item">
+            <span>GPU/VRAM:</span>
+            <strong id="top-diag-gpu" style="color:var(--accent-emerald);">--% | -- GB</strong>
+          </div>
+          <div class="telemetry-item">
+            <span>CPU/RAM:</span>
+            <strong id="top-diag-cpu" style="color:#a78bfa;">--% | -- GB</strong>
+          </div>
+          <div class="telemetry-item">
+            <span>ROS2:</span>
+            <strong id="top-diag-ros2" style="color:var(--text-muted);">OFFLINE</strong>
+          </div>
+          <div class="telemetry-item">
+            <span>SLAM:</span>
+            <strong id="top-diag-slam" style="color:var(--text-muted);">OFFLINE</strong>
+          </div>
+          <div class="telemetry-item">
+            <span>FLEET:</span>
+            <strong id="top-diag-fleet" style="color:var(--text-muted);">0/4 ACTIVE</strong>
+          </div>
+        </div>
+
+        <!-- Topbar Actions -->
         <div class="topbar-actions">
+          <!-- Real-Time Chronometer -->
+          <div class="chronometer" id="header-chronometer">--:--:-- UTC</div>
+
           <!-- Voice Command Trigger -->
-          <button class="btn btn-outline" id="btn-open-voice" title="Natural Language Voice Command">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+          <button class="btn btn-outline" id="btn-open-voice" title="Natural Language Voice Command (Hey Arogya)">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
             Voice Command
           </button>
 
           <!-- Emergency Alert Trigger -->
-          <button class="btn btn-danger" id="btn-trigger-emergency">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <button class="btn btn-danger" id="btn-trigger-emergency" title="Instant Code Blue Trauma Preemption">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             Code Blue
           </button>
 
           <!-- Run / Pause Simulation Toggle -->
-          <button class="btn btn-primary" id="btn-sim-toggle">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="sim-toggle-icon"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <button class="btn btn-primary btn-sim-pulse" id="btn-sim-toggle">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="sim-toggle-icon"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             <span id="sim-toggle-text">RUN SIMULATION</span>
           </button>
         </div>
       </header>
 
-      <!-- View Containers -->
+      <!-- ====================================================================
+           1. VIEW: OVERVIEW / COMMAND DECK (FULLY RECOMPOSED)
+           ==================================================================== -->
       <div class="content-body" id="view-dashboard">
-        <!-- Metrics Row -->
-        <div class="metric-grid">
-          <div class="metric-card">
-            <span class="metric-label">Inpatient Census</span>
-            <span class="metric-value" id="stat-patients-count">1</span>
-            <span class="metric-sub">ICU Bed 3 Occupied</span>
+        <!-- Tactical Metric Strip -->
+        <div class="tactical-metric-strip">
+          <div class="tactical-tile" style="--tile-accent:#00f0ff;">
+            <div class="tile-header">
+              <span class="tile-label">AMR Fleet Readiness</span>
+              <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+            </div>
+            <div class="tile-value-row">
+              <span class="tile-value" id="stat-robots-count">4</span>
+              <span class="tile-unit">/ 4 AMRs</span>
+            </div>
+            <div class="tile-meta">
+              <span class="dot" style="background:#10b981;"></span>
+              <span>100% Operational Readiness (4 Home Stations)</span>
+            </div>
           </div>
-          <div class="metric-card">
-            <span class="metric-label">Active Prescriptions</span>
-            <span class="metric-value" id="stat-rx-count">2</span>
-            <span class="metric-sub">Paracetamol 650mg Active</span>
+
+          <div class="tactical-tile" style="--tile-accent:#0ea5e9;">
+            <div class="tile-header">
+              <span class="tile-label">Active Missions In-Flight</span>
+              <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+            </div>
+            <div class="tile-value-row">
+              <span class="tile-value" id="stat-tasks-count">0</span>
+              <span class="tile-unit">Missions</span>
+            </div>
+            <div class="tile-meta">
+              <span>Nav2 Dispatch Queue & Contract-Net Allocation</span>
+            </div>
           </div>
-          <div class="metric-card">
-            <span class="metric-label">Autonomous AMR Fleet</span>
-            <span class="metric-value" id="stat-robots-count">4</span>
-            <span class="metric-sub">100% Operational Readiness</span>
+
+          <div class="tactical-tile" style="--tile-accent:#10b981;">
+            <div class="tile-header">
+              <span class="tile-label">Digital Twin Fidelity</span>
+              <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
+            </div>
+            <div class="tile-value-row">
+              <span class="tile-value">100%</span>
+              <span class="tile-unit">Authoritative</span>
+            </div>
+            <div class="tile-meta">
+              <span>88m x 76m Grand Hospital Stage (28 Departments)</span>
+            </div>
           </div>
-          <div class="metric-card">
-            <span class="metric-label">Pending / Active Tasks</span>
-            <span class="metric-value" id="stat-tasks-count">0</span>
-            <span class="metric-sub">Duplicate Block Guard Active</span>
+
+          <div class="tactical-tile" style="--tile-accent:#f59e0b;">
+            <div class="tile-header">
+              <span class="tile-label">Inpatient Census</span>
+              <svg class="tile-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+            <div class="tile-value-row">
+              <span class="tile-value" id="stat-patients-count">6</span>
+              <span class="tile-unit">Patients</span>
+            </div>
+            <div class="tile-meta">
+              <span id="stat-rx-count">43</span> Active Medication Prescriptions
+            </div>
           </div>
         </div>
 
-        <!-- Quick Action & Patient Spotlight -->
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
-          <!-- Active Missions / Tasks -->
-          <div class="table-card">
-            <div class="table-header">
-              <span class="table-title">Current AMR Operations</span>
-              <button class="btn btn-primary" id="btn-create-task-modal">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Create Delivery Task
-              </button>
+        <!-- Hero Fleet Telemetry Matrix (4 AMR Cards) -->
+        <div class="fleet-matrix-grid" id="dashboard-fleet-matrix">
+          <!-- AMR-01: Arogya_Delivery -->
+          <div class="amr-tactical-card" id="card-amr-Arogya_Delivery">
+            <div class="amr-card-header">
+              <div class="amr-id-group">
+                <div class="amr-avatar-icon">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/></svg>
+                </div>
+                <div>
+                  <div class="amr-name">Arogya_Delivery</div>
+                  <span class="amr-role-tag role-delivery">DELIVERY AMR-01</span>
+                </div>
+              </div>
+              <span class="badge badge-offline" id="amr-badge-Arogya_Delivery">IDLE</span>
             </div>
-            <table class="custom-table">
-              <thead>
-                <tr>
-                  <th>Task ID</th>
-                  <th>Patient / Bed</th>
-                  <th>Medicine</th>
-                  <th>Priority</th>
-                  <th>Assigned Robot</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody id="dashboard-tasks-table">
-                <tr><td colspan="6" style="text-align:center; color:var(--text-dim);">No active tasks in queue</td></tr>
-              </tbody>
-            </table>
+            <div class="amr-telemetry-row">
+              <span class="amr-coords">COORDS: <strong id="amr-coords-Arogya_Delivery">(34.5m, 33.0m)</strong></span>
+              <span style="color:#10b981; font-weight:700;" id="amr-batt-val-Arogya_Delivery">100%</span>
+            </div>
+            <div class="amr-battery-container">
+              <div class="amr-battery-bar">
+                <div class="amr-battery-fill" id="amr-batt-bar-Arogya_Delivery" style="width:100%;"></div>
+              </div>
+            </div>
+            <div style="font-size:11px; color:var(--text-dim);" id="amr-task-Arogya_Delivery">Standing by at Pharmacy Charging Pad</div>
+            <div class="amr-action-deck">
+              <button class="amr-btn-micro" onclick="AarogyaApp.trackRobotCamera('Arogya_Delivery')">Visor Track</button>
+              <button class="amr-btn-micro" onclick="AarogyaApp.openDispatchFor('Arogya_Delivery')">Dispatch</button>
+            </div>
           </div>
 
-          <!-- AMR Fleet Status Summary -->
+          <!-- AMR-02: Mitra_Reception -->
+          <div class="amr-tactical-card" id="card-amr-Mitra_Reception">
+            <div class="amr-card-header">
+              <div class="amr-id-group">
+                <div class="amr-avatar-icon" style="color:#c084fc; background:rgba(168,85,247,0.15); border-color:rgba(168,85,247,0.3);">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                </div>
+                <div>
+                  <div class="amr-name">Mitra_Reception</div>
+                  <span class="amr-role-tag role-reception">RECEPTION AMR-02</span>
+                </div>
+              </div>
+              <span class="badge badge-offline" id="amr-badge-Mitra_Reception">IDLE</span>
+            </div>
+            <div class="amr-telemetry-row">
+              <span class="amr-coords">COORDS: <strong id="amr-coords-Mitra_Reception">(0.0m, -5.0m)</strong></span>
+              <span style="color:#10b981; font-weight:700;" id="amr-batt-val-Mitra_Reception">100%</span>
+            </div>
+            <div class="amr-battery-container">
+              <div class="amr-battery-bar">
+                <div class="amr-battery-fill" id="amr-batt-bar-Mitra_Reception" style="width:100%;"></div>
+              </div>
+            </div>
+            <div style="font-size:11px; color:var(--text-dim);" id="amr-task-Mitra_Reception">Greeting Visitors in Reception Atrium</div>
+            <div class="amr-action-deck">
+              <button class="amr-btn-micro" onclick="AarogyaApp.trackRobotCamera('Mitra_Reception')">Visor Track</button>
+              <button class="amr-btn-micro" onclick="AarogyaApp.openDispatchFor('Mitra_Reception')">Dispatch</button>
+            </div>
+          </div>
+
+          <!-- AMR-03: Garuda_Emergency -->
+          <div class="amr-tactical-card" id="card-amr-Garuda_Emergency">
+            <div class="amr-card-header">
+              <div class="amr-id-group">
+                <div class="amr-avatar-icon" style="color:#f87171; background:rgba(239,68,68,0.15); border-color:rgba(239,68,68,0.3);">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/></svg>
+                </div>
+                <div>
+                  <div class="amr-name">Garuda_Emergency</div>
+                  <span class="amr-role-tag role-emergency">EMERGENCY AMR-03</span>
+                </div>
+              </div>
+              <span class="badge badge-offline" id="amr-badge-Garuda_Emergency">IDLE</span>
+            </div>
+            <div class="amr-telemetry-row">
+              <span class="amr-coords">COORDS: <strong id="amr-coords-Garuda_Emergency">(-29.0m, -8.8m)</strong></span>
+              <span style="color:#10b981; font-weight:700;" id="amr-batt-val-Garuda_Emergency">100%</span>
+            </div>
+            <div class="amr-battery-container">
+              <div class="amr-battery-bar">
+                <div class="amr-battery-fill" id="amr-batt-bar-Garuda_Emergency" style="width:100%;"></div>
+              </div>
+            </div>
+            <div style="font-size:11px; color:var(--text-dim);" id="amr-task-Garuda_Emergency">Trauma Preemption Standby in Bay EMR-01</div>
+            <div class="amr-action-deck">
+              <button class="amr-btn-micro" onclick="AarogyaApp.trackRobotCamera('Garuda_Emergency')">Visor Track</button>
+              <button class="amr-btn-micro" onclick="AarogyaApp.openDispatchFor('Garuda_Emergency')">Dispatch</button>
+            </div>
+          </div>
+
+          <!-- AMR-04: Sahayak_Support -->
+          <div class="amr-tactical-card" id="card-amr-Sahayak_Support">
+            <div class="amr-card-header">
+              <div class="amr-id-group">
+                <div class="amr-avatar-icon" style="color:#34d399; background:rgba(16,185,129,0.15); border-color:rgba(16,185,129,0.3);">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                </div>
+                <div>
+                  <div class="amr-name">Sahayak_Support</div>
+                  <span class="amr-role-tag role-support">SUPPORT AMR-04</span>
+                </div>
+              </div>
+              <span class="badge badge-offline" id="amr-badge-Sahayak_Support">IDLE</span>
+            </div>
+            <div class="amr-telemetry-row">
+              <span class="amr-coords">COORDS: <strong id="amr-coords-Sahayak_Support">(39.5m, 33.0m)</strong></span>
+              <span style="color:#10b981; font-weight:700;" id="amr-batt-val-Sahayak_Support">100%</span>
+            </div>
+            <div class="amr-battery-container">
+              <div class="amr-battery-bar">
+                <div class="amr-battery-fill" id="amr-batt-bar-Sahayak_Support" style="width:100%;"></div>
+              </div>
+            </div>
+            <div style="font-size:11px; color:var(--text-dim);" id="amr-task-Sahayak_Support">Logistics & Supply Transit Standby</div>
+            <div class="amr-action-deck">
+              <button class="amr-btn-micro" onclick="AarogyaApp.trackRobotCamera('Sahayak_Support')">Visor Track</button>
+              <button class="amr-btn-micro" onclick="AarogyaApp.openDispatchFor('Sahayak_Support')">Dispatch</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Operations Hero Deck: Hospital Mini-Radar & Active Mission Queue -->
+        <div class="operations-hero-deck">
+          <!-- Hospital Digital Twin Radar -->
+          <div class="deck-panel">
+            <div class="deck-panel-header">
+              <span class="deck-panel-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
+                Tactical Hospital Floor Radar (Digital Twin Live Pose)
+              </span>
+              <div style="display:flex; gap:8px;">
+                <button class="btn btn-outline" style="padding:4px 8px; font-size:11px;" onclick="AarogyaApp.switchView('map')">Open Full Map</button>
+              </div>
+            </div>
+            <div class="deck-panel-body">
+              <div class="canvas-wrapper" style="height:280px;">
+                <canvas id="dashboard-mini-radar-canvas" style="width:100%; height:100%; display:block;"></canvas>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--text-dim); font-family:var(--font-mono);">
+                <span>ZONES: 28 Departments • Enclosed Perimeter Walls</span>
+                <span>RADAR: 60Hz Physics Interpolation</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Operations & Dispatches -->
+          <div class="deck-panel">
+            <div class="deck-panel-header">
+              <span class="deck-panel-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                Current Clinical AMR Missions
+              </span>
+              <button class="btn btn-primary" id="btn-create-task-modal" style="padding:4px 10px; font-size:11px;">
+                + Create Mission
+              </button>
+            </div>
+            <div class="deck-panel-body" style="padding:0; overflow-y:auto; max-height:310px;">
+              <table class="custom-table">
+                <thead>
+                  <tr>
+                    <th>Task ID</th>
+                    <th>Destination</th>
+                    <th>Medicine</th>
+                    <th>Priority</th>
+                    <th>Assigned AMR</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboard-tasks-table">
+                  <tr><td colspan="6" style="text-align:center; color:var(--text-dim); padding:24px;">No active missions in queue</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lower Subsystem Verification & Telemetry -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+          <!-- Subsystem Status -->
           <div class="table-card">
             <div class="table-header">
-              <span class="table-title">AMR Telemetry Status</span>
+              <span class="table-title">Subsystem Diagnostic Status</span>
+              <span id="health-overall-badge" class="badge badge-offline">STANDBY</span>
             </div>
-            <div style="padding:16px; display:flex; flex-direction:column; gap:12px;" id="dashboard-fleet-summary">
+            <div style="padding: 12px 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;" id="dashboard-system-health-grid">
+              <div class="health-item" style="display:flex; justify-content:space-between; align-items:center; background:rgba(15,23,42,0.6); padding:7px 10px; border-radius:4px; font-size:12px;">
+                <span style="color:#94a3b8;">Backend API</span>
+                <span id="health-val-backend" style="font-weight:700; color:#10b981;">● ONLINE</span>
+              </div>
+              <div class="health-item" style="display:flex; justify-content:space-between; align-items:center; background:rgba(15,23,42,0.6); padding:7px 10px; border-radius:4px; font-size:12px;">
+                <span style="color:#94a3b8;">Database</span>
+                <span id="health-val-database" style="font-weight:700; color:#10b981;">● CONNECTED</span>
+              </div>
+              <div class="health-item" style="display:flex; justify-content:space-between; align-items:center; background:rgba(15,23,42,0.6); padding:7px 10px; border-radius:4px; font-size:12px;">
+                <span style="color:#94a3b8;">NVIDIA Isaac Sim 5.1</span>
+                <span id="health-val-isaac_sim" style="font-weight:700; color:#94a3b8;">● STANDBY</span>
+              </div>
+              <div class="health-item" style="display:flex; justify-content:space-between; align-items:center; background:rgba(15,23,42,0.6); padding:7px 10px; border-radius:4px; font-size:12px;">
+                <span style="color:#94a3b8;">ROS 2 Bridge</span>
+                <span id="health-val-ros2" style="font-weight:700; color:#94a3b8;">● STANDBY</span>
+              </div>
+              <div class="health-item" style="display:flex; justify-content:space-between; align-items:center; background:rgba(15,23,42,0.6); padding:7px 10px; border-radius:4px; font-size:12px;">
+                <span style="color:#94a3b8;">AMR Fleet (4 Robots)</span>
+                <span id="health-val-robots" style="font-weight:700; color:#10b981;">● 4 READY</span>
+              </div>
+              <div class="health-item" style="display:flex; justify-content:space-between; align-items:center; background:rgba(15,23,42,0.6); padding:7px 10px; border-radius:4px; font-size:12px;">
+                <span style="color:#94a3b8;">Authoritative SLAM</span>
+                <span id="health-val-slam" style="font-weight:700; color:#00f0ff;">● ACTIVE</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Activity Log Stream -->
+          <div class="table-card">
+            <div class="table-header">
+              <span class="table-title">Live Operational Event Stream</span>
+              <span style="font-size:11px; font-family:var(--font-mono); color:var(--text-dim);" id="dashboard-log-count">0 events</span>
+            </div>
+            <div style="padding: 10px 14px; font-family:var(--font-mono); font-size:11px; height:120px; overflow-y:auto; display:flex; flex-direction:column; gap:4px;" id="dashboard-events-feed">
+              <div style="color:var(--text-dim);">[SYSTEM] AAROGYA Core Engine initialized. Ready for operations.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           2. VIEW: SIMULATION CONTROL CENTRE (DEDICATED WORKSPACE)
+           ==================================================================== -->
+      <div class="content-body" id="view-simulation" style="display: none;">
+        <!-- Orchestration Deck -->
+        <div class="deck-panel">
+          <div class="deck-panel-header">
+            <div>
+              <span class="deck-panel-title">NVIDIA Isaac Sim 5.1 Orchestration Deck</span>
+              <span style="font-size:11px; color:var(--text-dim);">Interactive Desktop 3D GUI Window Station • Full Omniverse Experience (isaacsim.exp.full.kit)</span>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <button class="btn btn-primary" id="btn-deck-launch-sim">▶ Launch Isaac Sim (GUI)</button>
+              <button class="btn btn-outline" id="btn-deck-stop-sim">⏹ Stop Process</button>
+            </div>
+          </div>
+          <div class="deck-panel-body">
+            <!-- 8-Stage Visual Verification Pipeline -->
+            <div style="display:flex; gap:6px; flex-wrap:wrap;" id="sim-pipeline-badges">
+              <span class="badge badge-active" id="pipe-1">1. Backend Online</span>
+              <span class="badge badge-active" id="pipe-2">2. Mission System</span>
+              <span class="badge badge-offline" id="pipe-3">3. WinSta0 Created</span>
+              <span class="badge badge-offline" id="pipe-4">4. Python Kit Boot</span>
+              <span class="badge badge-offline" id="pipe-5">5. Isaac Sim 5.1 GUI</span>
+              <span class="badge badge-offline" id="pipe-6">6. USD Hospital Stage</span>
+              <span class="badge badge-offline" id="pipe-7">7. Timeline Playing</span>
+              <span class="badge badge-offline" id="pipe-8">8. 4 AMRs Spawned</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dual Visor Stream: Camera Perception + SLAM Radar -->
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px;">
+          <!-- Left: Head-Mounted Camera Sensor Feed -->
+          <div class="deck-panel">
+            <div class="deck-panel-header">
+              <span class="deck-panel-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                Simulation Sensor Feed
+              </span>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-outline" style="padding:3px 8px; font-size:10px;" onclick="AarogyaApp.setCameraMode('OVERVIEW')">Overview</button>
+                <button class="btn btn-outline" style="padding:3px 8px; font-size:10px;" onclick="AarogyaApp.setCameraMode('FOLLOW_ROBOT', 'Arogya_Delivery')">AR-01</button>
+                <button class="btn btn-outline" style="padding:3px 8px; font-size:10px;" onclick="AarogyaApp.setCameraMode('FOLLOW_ROBOT', 'Garuda_Emergency')">GA-03</button>
+              </div>
+            </div>
+            <div class="deck-panel-body" style="padding:0;">
+              <div class="canvas-wrapper" style="height:320px; display:flex; align-items:center; justify-content:center; background:#02050c;" id="camera-feed-container">
+                <img id="sim-camera-stream" data-src="http://127.0.0.1:8080/video_feed" style="width:100%; height:100%; object-fit:contain; display:none;" alt="Visor Stream" />
+                <div id="camera-stream-offline" style="text-align:center; padding:20px;">
+                  <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#0ea5e9" stroke-width="1.5" style="margin-bottom:10px;"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                  <div style="font-family:var(--font-heading); font-size:14px; font-weight:700; color:#fff;">SIMULATION SENSOR FEED STANDBY</div>
+                  <div style="font-size:11px; color:var(--text-dim); margin-top:4px;">Click [RUN SIMULATION] to launch NVIDIA Isaac Sim 5.1 desktop window.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Real-time SLAM & Nav2 Telemetry Radar -->
+          <div class="deck-panel">
+            <div class="deck-panel-header">
+              <span class="deck-panel-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                Live SLAM & Nav2 Trajectory
+              </span>
+              <span style="font-size:11px; font-family:var(--font-mono); color:var(--accent-cyan);" id="sim-telemetry-rate">10 Hz Telemetry</span>
+            </div>
+            <div class="deck-panel-body" style="padding:0;">
+              <div class="canvas-wrapper" style="height:250px;">
+                <canvas id="sim-radar-canvas" style="width:100%; height:100%; display:block;"></canvas>
+              </div>
+              <div style="padding:10px 14px; display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; font-family:var(--font-mono); font-size:11px; background:rgba(15,23,42,0.4);">
+                <div><span style="color:var(--text-dim);">POSE (X,Y):</span><br><strong id="sim-hud-pose">N/A</strong></div>
+                <div><span style="color:var(--text-dim);">HEADING:</span><br><strong id="sim-hud-heading">N/A</strong></div>
+                <div><span style="color:var(--text-dim);">SPEED:</span><br><strong id="sim-hud-speed" style="color:var(--accent-cyan);">0.00 m/s</strong></div>
+                <div><span style="color:var(--text-dim);">LIDAR DIST:</span><br><strong id="sim-hud-lidar">CLEAR</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Terminal Console Viewer -->
+        <div class="table-card">
+          <div class="table-header">
+            <span class="table-title">NVIDIA Isaac Sim Runtime Console Output</span>
+            <button class="btn btn-outline" style="padding:3px 8px; font-size:10px;" id="btn-clear-sim-logs">Clear View</button>
+          </div>
+          <div id="sim-terminal-log-stream" style="height:140px; overflow-y:auto; background:#02050c; padding:10px 14px; font-family:var(--font-mono); font-size:11px; color:#94a3b8; display:flex; flex-direction:column; gap:3px;">
+            <div>[SIM-INIT] Waiting for simulation launch command...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           3. VIEW: HOSPITAL LIVE MAP (SIDE-BY-SIDE & COMPARISON WORKSPACE)
+           ==================================================================== -->
+      <div class="content-body" id="view-map" style="display: none;">
+        <div class="deck-panel">
+          <div class="deck-panel-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button class="btn btn-map-mode active" data-mode="reference">Mode 1: CAD Reference</button>
+              <button class="btn btn-map-mode" data-mode="slam">Mode 2: Authoritative SLAM</button>
+              <button class="btn btn-map-mode" data-mode="side">Mode 3: Side-by-Side</button>
+              <button class="btn btn-map-mode" data-mode="overlay">Mode 4: Overlay</button>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+              <button class="btn btn-outline" id="btn-toggle-dyn-obs">Dynamic Obstacle</button>
+              <button class="btn btn-primary" id="btn-start-exploration">Start Exploration</button>
+            </div>
+          </div>
+
+          <!-- Mode 4 Overlay Slider Bar -->
+          <div id="map-overlay-controls" style="display:none; padding:8px 16px; background:rgba(15,23,42,0.85); border-bottom:1px solid rgba(255,255,255,0.08); display:none; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:12px; font-size:12px;">
+              <span style="font-weight:600; color:var(--accent-cyan);">SLAM Transparency Overlay:</span>
+              <input type="range" id="slider-overlay-opacity" min="0" max="100" value="60" style="width:160px; cursor:pointer;">
+              <span id="val-overlay-opacity" style="font-weight:700; color:#fff;">60%</span>
+            </div>
+            <div style="font-size:11px; color:var(--text-dim);">
+              Superimposing live robot SLAM observations onto ground truth hospital blueprint
+            </div>
+          </div>
+
+          <div class="deck-panel-body" style="padding:0;">
+            <!-- Single Canvas View (Modes 1, 2, 4) -->
+            <div id="map-single-canvas-container" class="canvas-wrapper" style="height:620px;">
+              <canvas id="hospital-map-canvas" style="width:100%; height:100%; display:block; cursor:crosshair;"></canvas>
+            </div>
+
+            <!-- Mode 3: Side-by-Side Comparison Workspace -->
+            <div id="map-side-by-side-container" style="display:none; grid-template-columns:1fr 1fr; gap:12px; height:620px; padding:12px; background:#040711;">
+              
+              <!-- LEFT: MAP A — Reference Hospital Map (CAD Ground Truth) -->
+              <div class="map-subpanel" style="background:#080d1a; border:1px solid rgba(255,255,255,0.08); border-radius:8px; display:flex; flex-direction:column; overflow:hidden;">
+                <div style="padding:10px 14px; background:rgba(15,23,42,0.9); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+                  <div>
+                    <div style="font-weight:700; font-size:13px; color:#38bdf8; display:flex; align-items:center; gap:6px;">
+                      <span>📐 MAP A — REFERENCE HOSPITAL MAP</span>
+                      <span class="badge badge-active" style="font-size:10px; padding:2px 6px;">CAD Ground Truth</span>
+                    </div>
+                    <div style="font-size:11px; color:var(--text-muted);">Fixed Reference Architectural Layout • Floor Plan Blueprint</div>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:4px;">
+                    <button class="btn btn-outline" style="padding:2px 8px; font-size:11px;" id="btn-zoom-in-ref" title="Zoom In">+</button>
+                    <button class="btn btn-outline" style="padding:2px 8px; font-size:11px;" id="btn-zoom-out-ref" title="Zoom Out">-</button>
+                    <button class="btn btn-outline" style="padding:2px 8px; font-size:11px;" id="btn-zoom-reset-ref" title="Reset View">Reset</button>
+                  </div>
+                </div>
+                <div style="padding:6px 14px; background:rgba(0,0,0,0.3); border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--text-dim);">
+                  <div style="display:flex; gap:12px;">
+                    <span>Grid: <strong>5.0m CAD</strong></span>
+                    <span>Origin: <strong>(0.00, 0.00)</strong></span>
+                    <span>Span: <strong>90m x 64m</strong></span>
+                  </div>
+                  <div>
+                    Cursor: <strong id="cursor-coord-ref" style="color:#38bdf8;">X: 0.00m, Y: 0.00m</strong>
+                  </div>
+                </div>
+                <div style="padding:6px 14px; background:rgba(15,23,42,0.4); border-bottom:1px solid rgba(255,255,255,0.05); display:flex; gap:14px; font-size:11px;">
+                  <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                    <input type="checkbox" id="layer-ref-grid" checked> Grid
+                  </label>
+                  <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                    <input type="checkbox" id="layer-ref-rooms" checked> Rooms & Units
+                  </label>
+                  <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                    <input type="checkbox" id="layer-ref-corridors" checked> Corridors
+                  </label>
+                  <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                    <input type="checkbox" id="layer-ref-walls" checked> Outer Walls
+                  </label>
+                </div>
+                <div class="canvas-wrapper" style="flex:1; position:relative; overflow:hidden;">
+                  <canvas id="canvas-map-reference" style="width:100%; height:100%; display:block; cursor:crosshair;"></canvas>
+                </div>
+              </div>
+
+              <!-- RIGHT: MAP B — Robot-Generated SLAM Map (Live Sensor Observations) -->
+              <div class="map-subpanel" style="background:#080d1a; border:1px solid rgba(255,255,255,0.08); border-radius:8px; display:flex; flex-direction:column; overflow:hidden;">
+                <div style="padding:10px 14px; background:rgba(15,23,42,0.9); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; justify-content:space-between; align-items:center;">
+                  <div>
+                    <div style="font-weight:700; font-size:13px; color:#10b981; display:flex; align-items:center; gap:6px;">
+                      <span>📡 MAP B — ROBOT-GENERATED SLAM MAP</span>
+                      <span class="badge badge-navigating" style="font-size:10px; padding:2px 6px;">Live Occupancy Grid</span>
+                    </div>
+                    <div style="font-size:11px; color:var(--text-muted);">Real-Time Sensor Observations • 360° LiDAR & Wheel Odometry</div>
+                  </div>
+                  <div style="display:flex; align-items:center; gap:4px;">
+                    <button class="btn btn-outline" style="padding:2px 8px; font-size:11px;" id="btn-zoom-in-slam" title="Zoom In">+</button>
+                    <button class="btn btn-outline" style="padding:2px 8px; font-size:11px;" id="btn-zoom-out-slam" title="Zoom Out">-</button>
+                    <button class="btn btn-outline" style="padding:2px 8px; font-size:11px;" id="btn-zoom-reset-slam" title="Reset View">Reset</button>
+                  </div>
+                </div>
+                <div style="padding:6px 14px; background:rgba(0,0,0,0.3); border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--text-dim);">
+                  <div style="display:flex; gap:12px;">
+                    <span>Res: <strong id="slam-diag-res">0.20m</strong></span>
+                    <span>Origin: <strong id="slam-diag-origin">(-45.0, -32.0)</strong></span>
+                    <span>Coverage: <strong id="slam-diag-coverage" style="color:#10b981;">0.0%</strong></span>
+                    <span>Frontiers: <strong id="slam-diag-frontiers">0</strong></span>
+                  </div>
+                  <div>
+                    Cursor: <strong id="cursor-coord-slam" style="color:#10b981;">X: 0.00m, Y: 0.00m</strong>
+                  </div>
+                </div>
+                <div style="padding:6px 14px; background:rgba(15,23,42,0.4); border-bottom:1px solid rgba(255,255,255,0.05); display:flex; gap:14px; font-size:11px;">
+                  <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                    <input type="checkbox" id="layer-slam-walls" checked> LiDAR Hits (Cyan)
+                  </label>
+                  <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                    <input type="checkbox" id="layer-slam-free" checked> Explored Free Space
+                  </label>
+                  <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                    <input type="checkbox" id="layer-slam-frontiers" checked> Frontiers
+                  </label>
+                  <label style="display:flex; align-items:center; gap:4px; cursor:pointer;">
+                    <input type="checkbox" id="layer-slam-hazards" checked> Dynamic Hazards
+                  </label>
+                </div>
+                <div class="canvas-wrapper" style="flex:1; position:relative; overflow:hidden;">
+                  <canvas id="canvas-map-slam" style="width:100%; height:100%; display:block; cursor:crosshair;"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           4. VIEW: ROBOT FLEET MANAGEMENT & MANUAL TELEOPERATION
+           ==================================================================== -->
+      <div class="content-body" id="view-robots" style="display: none;">
+        <div class="table-card">
+          <div class="table-header">
+            <span class="table-title">Autonomous AMR Fleet Telemetry & Operations</span>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-outline" onclick="AarogyaApp.switchView('simulation')">Open 3D Viewport</button>
+              <button class="btn btn-primary" id="btn-refresh-fleet">Refresh Fleet</button>
+            </div>
+          </div>
+          <table class="custom-table" style="width:100%;">
+            <thead>
+              <tr>
+                <th>AMR ID</th>
+                <th>Robot Name & Role</th>
+                <th>Position (X, Y)</th>
+                <th>Battery</th>
+                <th>Navigation Status</th>
+                <th>Current Mission</th>
+                <th>Inspect / Focus</th>
+              </tr>
+            </thead>
+            <tbody id="fleet-roster-tbody">
+              <!-- Dynamically populated by renderFleetOperationsConsole() in app.js -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Teleop & Robot Inspector Split Section -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
+          
+          <!-- Robot Inspector Drawer Card -->
+          <div class="table-card" style="padding:16px;">
+            <div style="font-weight:700; font-size:14px; margin-bottom:12px; color:var(--accent-cyan); display:flex; justify-content:space-between; align-items:center;">
+              <span id="drawer-robot-name">Arogya_Delivery (ROBOT-01)</span>
+              <span id="drawer-robot-status" class="badge badge-active">IDLE</span>
+            </div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:14px;" id="drawer-robot-id">
+              Clinical Delivery AMR • Quad-Wheel Differential Drive
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:12px; margin-bottom:16px;">
+              <div style="background:rgba(15,23,42,0.6); padding:8px; border-radius:6px;">
+                <span style="color:var(--text-muted); display:block; font-size:10px;">WORLD POSE</span>
+                <strong id="drawer-robot-pose">X: 34.50m, Y: 33.00m</strong>
+              </div>
+              <div style="background:rgba(15,23,42,0.6); padding:8px; border-radius:6px;">
+                <span style="color:var(--text-muted); display:block; font-size:10px;">HEADING (YAW)</span>
+                <strong id="drawer-robot-yaw">0.0° (0.00 rad)</strong>
+              </div>
+              <div style="background:rgba(15,23,42,0.6); padding:8px; border-radius:6px;">
+                <span style="color:var(--text-muted); display:block; font-size:10px;">LINEAR SPEED</span>
+                <strong id="drawer-robot-speed">0.00 m/s</strong>
+              </div>
+              <div style="background:rgba(15,23,42,0.6); padding:8px; border-radius:6px;">
+                <span style="color:var(--text-muted); display:block; font-size:10px;">ZONE / ROOM</span>
+                <strong id="drawer-robot-zone">Fleet Bay (CHG-01)</strong>
+              </div>
+            </div>
+            <div style="margin-bottom:14px;">
+              <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
+                <span style="color:var(--text-muted);">Battery State of Charge:</span>
+                <strong id="drawer-robot-battery-pct">98.5%</strong>
+              </div>
+              <div class="progress-bar-container" style="height:6px;">
+                <div class="progress-bar-fill" id="drawer-robot-battery-bar" style="width:98.5%; background:var(--accent-emerald);"></div>
+              </div>
+            </div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">
+              Est. Range: <strong id="drawer-robot-range" style="color:#fff;">7.9 km</strong> • 
+              Navigation Goal: <strong id="drawer-robot-nav-goal" style="color:var(--accent-cyan);">None (Standby)</strong>
+            </div>
+            <div style="font-size:11px; color:var(--text-dim); margin-bottom:12px;" id="drawer-robot-map-knowledge">
+              Authoritative SLAM (0.0% Discovered)
+            </div>
+            <div style="font-size:11px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">MISSION HISTORY:</div>
+            <div id="drawer-mission-history" style="display:flex; flex-direction:column; gap:4px;">
               <!-- Dynamically populated -->
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- VIEW: SIMULATION & ISAAC 3D -->
-      <div class="content-body" id="view-simulation" style="display:none; padding:16px;">
-        <div class="sim-container">
-          <!-- Simulation Viewport -->
-          <div class="sim-viewport-card">
-            <div class="viewport-toolbar">
-              <div style="display:flex; align-items:center; gap:12px;">
-                <span style="font-weight:600; font-size:13px;">Isaac Sim Synchronized Viewport</span>
-                <span class="badge badge-active" id="viewport-fps">60 FPS</span>
-              </div>
-              <div class="camera-controls">
-                <button class="btn-cam active" data-cam="FOLLOW_ROBOT">Follow Robot</button>
-                <button class="btn-cam" data-cam="FOLLOW_TASK">Follow Task</button>
-                <button class="btn-cam" data-cam="OVERVIEW">Overview</button>
-              </div>
+          <!-- Manual Teleoperation & Actuation Console -->
+          <div class="table-card" style="padding:16px;">
+            <div style="font-weight:700; font-size:14px; margin-bottom:8px; color:var(--accent-cyan); display:flex; justify-content:space-between; align-items:center;">
+              <span>🕹️ MANUAL ROBOT TELEOPERATION & ACTUATION</span>
+              <span class="badge badge-active" style="font-size:10px;">ROS 2 /cmd_vel</span>
             </div>
-            <canvas id="hospital-canvas"></canvas>
-          </div>
+            <div style="font-size:11px; color:var(--text-muted); margin-bottom:12px;">
+              Direct physical velocity commands injected into Isaac Sim USD stage via differential drive kinematics.
+            </div>
 
-          <!-- Telemetry & Event Sidebar -->
-          <div class="sim-telemetry-sidebar">
-            <!-- Robot Telemetry Card -->
-            <div class="telemetry-card">
-              <div class="telemetry-card-title">
-                <span>Active AMR Telemetry</span>
-                <span class="badge badge-active" id="sim-active-robot-name">Aarogya_Delivery</span>
-              </div>
-              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:12px;">
-                <div>X: <strong id="sim-pos-x">37.25</strong> m</div>
-                <div>Y: <strong id="sim-pos-y">26.00</strong> m</div>
-                <div>Yaw: <strong id="sim-yaw">0.00</strong> rad</div>
-                <div>Linear Vel: <strong id="sim-v-lin">0.00</strong> m/s</div>
-                <div>Battery: <strong id="sim-battery">98%</strong></div>
-                <div>Status: <strong id="sim-status">IDLE</strong></div>
+            <!-- Target Robot Selector -->
+            <div style="margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+              <label style="font-size:12px; font-weight:600; min-width:80px;">Target AMR:</label>
+              <select id="teleop-robot-select" class="form-input" style="flex:1; padding:6px 10px; font-size:12px; background:#0f172a; border:1px solid rgba(255,255,255,0.15); color:#fff; border-radius:4px;">
+                <option value="Arogya_Delivery">Arogya_Delivery (AR-01) — Clinical Delivery</option>
+                <option value="Mitra_Reception">Mitra_Reception (MI-02) — Patient Concierge</option>
+                <option value="Garuda_Emergency">Garuda_Emergency (GA-03) — Trauma Response</option>
+                <option value="Sahayak_Support">Sahayak_Support (SA-04) — Utility Support</option>
+              </select>
+            </div>
+
+            <!-- Speed Limit Sliders -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; background:rgba(15,23,42,0.6); padding:10px; border-radius:6px;">
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
+                  <span>Linear Speed:</span>
+                  <strong id="teleop-linear-val">0.40 m/s</strong>
+                </div>
+                <input type="range" id="teleop-linear-speed" min="0.1" max="1.0" step="0.05" value="0.4" style="width:100%; cursor:pointer;">
               </div>
               <div>
                 <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
-                  <span>Task Completion</span>
-                  <span id="sim-task-pct">0%</span>
+                  <span>Angular Speed:</span>
+                  <strong id="teleop-angular-val">0.80 rad/s</strong>
                 </div>
-                <div class="progress-bar-container">
-                  <div class="progress-bar-fill" id="sim-task-progress-bar" style="width:0%"></div>
-                </div>
+                <input type="range" id="teleop-angular-speed" min="0.2" max="1.5" step="0.1" value="0.8" style="width:100%; cursor:pointer;">
               </div>
             </div>
 
-            <!-- Terminal Realtime Stream -->
-            <div class="telemetry-card" style="flex:1;">
-              <div class="telemetry-card-title">
-                <span>Isaac Orchestrator Log Stream</span>
-                <button class="btn-cam" id="btn-clear-terminal">Clear</button>
+            <!-- Teleoperation D-Pad -->
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px; margin-bottom:14px;">
+              <div>
+                <button class="btn btn-outline" id="teleop-btn-forward" style="width:130px; padding:10px; font-size:12px; font-weight:700; background:rgba(30,41,59,0.8);" title="Forward (W / Up Arrow)">
+                  ▲ FORWARD (W)
+                </button>
               </div>
-              <div class="terminal-card" id="terminal-stream">
-                <div class="terminal-line INFO">[SYSTEM] Connected to AAROGYA Isaac Sim Orchestrator.</div>
+              <div style="display:flex; gap:6px;">
+                <button class="btn btn-outline" id="teleop-btn-left" style="width:110px; padding:10px; font-size:11px; font-weight:700; background:rgba(30,41,59,0.8);" title="Rotate Left (A / Left Arrow)">
+                  ◀ LEFT (A)
+                </button>
+                <button class="btn btn-danger" id="teleop-btn-stop" style="width:110px; padding:10px; font-size:11px; font-weight:700;" title="EMERGENCY STOP (Space / S)">
+                  ⏹ STOP (Space)
+                </button>
+                <button class="btn btn-outline" id="teleop-btn-right" style="width:110px; padding:10px; font-size:11px; font-weight:700; background:rgba(30,41,59,0.8);" title="Rotate Right (D / Right Arrow)">
+                  ▶ RIGHT (D)
+                </button>
+              </div>
+              <div>
+                <button class="btn btn-outline" id="teleop-btn-reverse" style="width:130px; padding:10px; font-size:12px; font-weight:700; background:rgba(30,41,59,0.8);" title="Reverse (S / Down Arrow)">
+                  ▼ REVERSE (S)
+                </button>
+              </div>
+            </div>
+
+            <!-- Live Feedback & Acknowledgment -->
+            <div style="background:#020617; border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:8px 12px; font-size:11px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                <span style="color:var(--text-muted);">Actuation Command:</span>
+                <strong id="teleop-feedback-status" style="color:var(--accent-cyan);">STATIONARY / READY</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                <span style="color:var(--text-muted);">Physical Actuation:</span>
+                <span style="font-family:var(--font-mono);">Vx: <strong id="teleop-val-vx">0.00</strong> m/s, Wz: <strong id="teleop-val-wz">0.00</strong> rad/s</span>
+              </div>
+              <div style="display:flex; justify-content:space-between;">
+                <span style="color:var(--text-muted);">Isaac Sim Physical ACK:</span>
+                <strong id="teleop-feedback-ack" style="color:var(--accent-emerald);">READY</strong>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- VIEW: HOSPITAL LIVE MAP -->
-      <div class="content-body" id="view-map" style="display:none; padding:16px;">
-        <div class="sim-viewport-card" style="height: calc(100vh - 120px);">
-          <div class="viewport-toolbar">
-            <span style="font-weight:600; font-size:14px;">Hospital Facility Spatial Map & AMR Locations (NVIDIA Isaac Coordinate Frame)</span>
-            <div style="font-size:12px; color:var(--text-muted);">Click on any room or AMR to view status</div>
-          </div>
-          <canvas id="hospital-map-canvas" style="width:100%; height:100%; background:#080d1a;"></canvas>
-        </div>
-      </div>
-
-      <!-- VIEW: PATIENTS & BEDS -->
-      <div class="content-body" id="view-patients" style="display:none;">
+      <!-- ====================================================================
+           5. VIEW: MISSIONS & TASKS
+           ==================================================================== -->
+      <div class="content-body" id="view-tasks" style="display: none;">
         <div class="table-card">
           <div class="table-header">
-            <span class="table-title">Admitted Inpatients & Bed Registry</span>
-            <span class="badge badge-active">ICU Occupied: Arun Patel</span>
-          </div>
-          <table class="custom-table">
-            <thead>
-              <tr>
-                <th>Patient ID</th>
-                <th>Full Name</th>
-                <th>MRN</th>
-                <th>Room / Bed</th>
-                <th>Primary Doctor</th>
-                <th>Admitted</th>
-                <th>Active Prescriptions</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="patients-table-body"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- VIEW: PRESCRIPTIONS & RX -->
-      <div class="content-body" id="view-prescriptions" style="display:none;">
-        <div class="table-card">
-          <div class="table-header">
-            <span class="table-title">Clinical Prescriptions & Scheduled Doses</span>
-            <button class="btn btn-primary" id="btn-create-rx-modal">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              New Prescription (Doctor Only)
-            </button>
-          </div>
-          <table class="custom-table">
-            <thead>
-              <tr>
-                <th>Rx ID</th>
-                <th>Patient</th>
-                <th>Medicine</th>
-                <th>Dosage / Freq</th>
-                <th>Route</th>
-                <th>Prescribed By</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="prescriptions-table-body"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- VIEW: TASKS -->
-      <div class="content-body" id="view-tasks" style="display:none;">
-        <div class="table-card">
-          <div class="table-header">
-            <span class="table-title">Autonomous Robot Delivery & Assistance Tasks</span>
-            <button class="btn btn-primary" id="btn-create-task-modal-2">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Dispatch Delivery Task
-            </button>
+            <span class="table-title">Clinical Mission Queue & Nav2 Execution</span>
+            <div style="display:flex; gap:8px;">
+              <button class="btn btn-outline" id="btn-view-mission-replay">Digital Twin Replay</button>
+              <button class="btn btn-primary" id="btn-create-task-modal-2">+ New Mission</button>
+            </div>
           </div>
           <table class="custom-table">
             <thead>
               <tr>
                 <th>Task ID</th>
-                <th>Type</th>
-                <th>Patient & Room</th>
-                <th>Medicine</th>
+                <th>Patient / Room</th>
+                <th>Prescription / Payload</th>
                 <th>Priority</th>
-                <th>Assigned AMR</th>
-                <th>Status</th>
-                <th>Progress</th>
-                <th>Created At</th>
+                <th>Assigned Robot</th>
+                <th>Execution Stage</th>
+                <th>Timeline</th>
+                <th>Actions</th>
               </tr>
             </thead>
-            <tbody id="tasks-table-body"></tbody>
+            <tbody id="tasks-table-body">
+              <tr><td colspan="8" style="text-align:center; color:var(--text-dim); padding:24px;">No active missions</td></tr>
+            </tbody>
           </table>
         </div>
       </div>
 
-      <!-- VIEW: FLEET & AMRS -->
-      <div class="content-body" id="view-robots" style="display:none;">
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px;" id="robots-card-grid">
-          <!-- Populated dynamically -->
-        </div>
-      </div>
-
-      <!-- VIEW: PHARMACY FORMULARY -->
-      <div class="content-body" id="view-medicines" style="display:none;">
+      <!-- ====================================================================
+           6. VIEW: PATIENTS & BEDS
+           ==================================================================== -->
+      <div class="content-body" id="view-patients" style="display: none;">
         <div class="table-card">
           <div class="table-header">
-            <span class="table-title">Hospital Pharmacy Formulary & Inventory</span>
+            <span class="table-title">Inpatient Ward Census & Bed Allocations</span>
+            <button class="btn btn-primary" id="btn-create-rx-modal">+ Prescribe Medicine</button>
           </div>
           <table class="custom-table">
             <thead>
               <tr>
-                <th>Code</th>
-                <th>Generic Name</th>
-                <th>Category</th>
-                <th>Form / Route</th>
-                <th>Strength</th>
-                <th>Stock Balance</th>
-                <th>Restricted</th>
+                <th>Patient ID</th>
+                <th>Name</th>
+                <th>Age / Gender</th>
+                <th>Ward / Bed</th>
+                <th>Diagnosis</th>
+                <th>Attending Doctor</th>
+                <th>Active Rx</th>
+                <th>Actions</th>
               </tr>
             </thead>
-            <tbody id="medicines-table-body"></tbody>
+            <tbody id="patients-table-body">
+              <tr><td colspan="8" style="text-align:center; color:var(--text-dim); padding:24px;">Loading census...</td></tr>
+            </tbody>
           </table>
         </div>
       </div>
 
-      <!-- VIEW: DOCTORS & NURSES -->
-      <div class="content-body" id="view-staff" style="display:none;">
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-          <div class="table-card">
-            <div class="table-header"><span class="table-title">Physician Staff</span></div>
-            <table class="custom-table">
-              <thead><tr><th>Name</th><th>Emp ID</th><th>Specialty</th></tr></thead>
-              <tbody id="doctors-table-body"></tbody>
-            </table>
-          </div>
-          <div class="table-card">
-            <div class="table-header"><span class="table-title">Nursing Staff</span></div>
-            <table class="custom-table">
-              <thead><tr><th>Name</th><th>Emp ID</th><th>Shift</th></tr></thead>
-              <tbody id="nurses-table-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- VIEW: EMERGENCY CENTER -->
-      <div class="content-body" id="view-emergency" style="display:none;">
-        <div style="background:rgba(239, 68, 68, 0.1); border:1px solid rgba(239,68,68,0.3); border-radius:var(--radius-lg); padding:24px; display:flex; flex-direction:column; gap:16px;">
-          <div style="display:flex; align-items:center; gap:12px;">
-            <div style="width:40px; height:40px; border-radius:50%; background:var(--accent-crimson); display:flex; align-items:center; justify-content:center; color:white;">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            </div>
-            <div>
-              <h2 style="font-family:'Outfit'; font-size:20px; color:var(--accent-crimson);">Hospital Emergency Dispatch & Priority Preemption</h2>
-              <p style="font-size:13px; color:var(--text-muted);">Triggering Code Blue interrupts all routine delivery tasks and routes Garuda_Emergency AMR with life-support kit directly to the room.</p>
-            </div>
-          </div>
-          <div style="display:flex; gap:14px;">
-            <button class="btn btn-danger" onclick="AarogyaApp.quickTriggerCodeBlue('ICU-01', 'Critical cardiac alert in ICU Bed 3')">
-              Trigger Code Blue at ICU-01
-            </button>
-            <button class="btn btn-danger" onclick="AarogyaApp.quickTriggerCodeBlue('EMR-01', 'Mass casualty staging triage')">
-              Trigger Trauma Alert at EMR-01
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- VIEW: AUDIT & COMPLIANCE LOGS -->
-      <div class="content-body" id="view-logs" style="display:none;">
+      <!-- ====================================================================
+           7. VIEW: DOCTORS & NURSES
+           ==================================================================== -->
+      <div class="content-body" id="view-staff" style="display: none;">
         <div class="table-card">
           <div class="table-header">
-            <span class="table-title">System Audit Trail & Authorization Log</span>
+            <span class="table-title">Clinical Staff & Role-Based Access Directory</span>
+          </div>
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Staff ID</th>
+                <th>Full Name</th>
+                <th>Role</th>
+                <th>Department</th>
+                <th>Assigned Wards</th>
+                <th>Duty Status</th>
+                <th>Active Requests</th>
+              </tr>
+            </thead>
+            <tbody id="staff-table-body">
+              <tr><td colspan="7" style="text-align:center; color:var(--text-dim); padding:24px;">Loading staff roster...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           8. VIEW: PHARMACY
+           ==================================================================== -->
+      <div class="content-body" id="view-medicines" style="display: none;">
+        <div class="table-card">
+          <div class="table-header">
+            <span class="table-title">Hospital Pharmacy Inventory & Automated Dispensary</span>
+          </div>
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Medicine ID</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Dosage Form</th>
+                <th>Stock Level</th>
+                <th>Storage Area</th>
+                <th>Restock Status</th>
+              </tr>
+            </thead>
+            <tbody id="medicines-table-body">
+              <tr><td colspan="7" style="text-align:center; color:var(--text-dim); padding:24px;">Loading inventory...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           9. VIEW: EMERGENCY CENTRE
+           ==================================================================== -->
+      <div class="content-body" id="view-emergency" style="display: none;">
+        <div class="table-card" style="border-color:rgba(239,68,68,0.3);">
+          <div class="table-header" style="background:rgba(239,68,68,0.15);">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="badge badge-emergency">CODE BLUE ACTIVE</span>
+              <span class="table-title" style="color:#f87171;">Emergency Preemption Command Deck</span>
+            </div>
+            <button class="btn btn-danger" onclick="AarogyaApp.quickTriggerCodeBlue('ICU-01', 'Emergency triggered from Emergency Centre')">Trigger Emergency</button>
+          </div>
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>Alert ID</th>
+                <th>Location</th>
+                <th>Incident Type</th>
+                <th>Preempted Robot</th>
+                <th>Corridor Clear Status</th>
+                <th>ETA</th>
+                <th>Time Active</th>
+              </tr>
+            </thead>
+            <tbody id="emergency-table-body">
+              <tr><td colspan="7" style="text-align:center; color:var(--text-dim); padding:24px;">No active emergency incidents</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           10. VIEW: SYSTEM HEALTH
+           ==================================================================== -->
+      <div class="content-body" id="view-health" style="display: none;">
+        <div class="table-card">
+          <div class="table-header">
+            <span class="table-title">Core Robotics Platform Diagnostics & Hardware Telemetry</span>
+            <button class="btn btn-primary" id="btn-refresh-health-page">Audit System</button>
+          </div>
+          <div style="padding:16px;" id="system-health-diagnostics-view">
+            <!-- Hardware Performance Metrics -->
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:12px; margin-bottom:16px;">
+              <div class="diag-card" style="background:#0b1120; border:1px solid rgba(255,255,255,0.08); padding:12px; border-radius:8px;">
+                <span class="diag-card-label" style="font-size:11px; color:var(--text-muted); display:block;">ISAAC SIM STATUS</span>
+                <span class="diag-card-val" id="health-page-sim-val" style="font-size:16px; font-weight:700; color:var(--accent-emerald);">● STANDBY</span>
+              </div>
+              <div class="diag-card" style="background:#0b1120; border:1px solid rgba(255,255,255,0.08); padding:12px; border-radius:8px;">
+                <span class="diag-card-label" style="font-size:11px; color:var(--text-muted); display:block;">SIMULATION FPS</span>
+                <span class="diag-card-val" id="health-hw-fps" style="font-size:16px; font-weight:700; color:var(--accent-cyan);">--.- FPS</span>
+              </div>
+              <div class="diag-card" style="background:#0b1120; border:1px solid rgba(255,255,255,0.08); padding:12px; border-radius:8px;">
+                <span class="diag-card-label" style="font-size:11px; color:var(--text-muted); display:block;">GPU UTILIZATION</span>
+                <span class="diag-card-val" id="health-hw-gpu" style="font-size:16px; font-weight:700; color:var(--accent-emerald);">--%</span>
+              </div>
+              <div class="diag-card" style="background:#0b1120; border:1px solid rgba(255,255,255,0.08); padding:12px; border-radius:8px;">
+                <span class="diag-card-label" style="font-size:11px; color:var(--text-muted); display:block;">GPU VRAM (RTX 4050)</span>
+                <span class="diag-card-val" id="health-hw-vram" style="font-size:14px; font-weight:700; color:#38bdf8;">-- / 6144 MB</span>
+              </div>
+              <div class="diag-card" style="background:#0b1120; border:1px solid rgba(255,255,255,0.08); padding:12px; border-radius:8px;">
+                <span class="diag-card-label" style="font-size:11px; color:var(--text-muted); display:block;">CPU UTILIZATION</span>
+                <span class="diag-card-val" id="health-hw-cpu" style="font-size:16px; font-weight:700; color:#a78bfa;">--%</span>
+              </div>
+              <div class="diag-card" style="background:#0b1120; border:1px solid rgba(255,255,255,0.08); padding:12px; border-radius:8px;">
+                <span class="diag-card-label" style="font-size:11px; color:var(--text-muted); display:block;">HOST SYSTEM RAM</span>
+                <span class="diag-card-val" id="health-hw-ram" style="font-size:14px; font-weight:700; color:#c084fc;">-- / 16384 MB</span>
+              </div>
+            </div>
+
+            <div style="font-weight:700; font-size:13px; color:var(--text-main); margin-bottom:10px;">Subsystem Diagnostics & Action Server States</div>
+            <!-- Subsystem Diagnostics Grid -->
+            <div id="health-page-diagnostics-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:12px;">
+              <!-- Dynamically populated by renderSystemHealthPage() in app.js -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ====================================================================
+           11. VIEW: AUDIT LOGS
+           ==================================================================== -->
+      <div class="content-body" id="view-logs" style="display: none;">
+        <div class="table-card">
+          <div class="table-header">
+            <span class="table-title">Platform Audit Trail & Security Ledger</span>
           </div>
           <table class="custom-table">
             <thead>
               <tr>
                 <th>Timestamp</th>
-                <th>User</th>
-                <th>Role</th>
+                <th>Severity</th>
+                <th>Actor</th>
                 <th>Action</th>
-                <th>Entity</th>
-                <th>Duplicate Flag</th>
-                <th>Auth Denied</th>
                 <th>Details</th>
               </tr>
             </thead>
-            <tbody id="audit-table-body"></tbody>
+            <tbody id="audit-logs-table-body">
+              <tr><td colspan="5" style="text-align:center; color:var(--text-dim); padding:24px;">Loading audit logs...</td></tr>
+            </tbody>
           </table>
         </div>
       </div>
     </main>
   </div>
 
-  <!-- ── MODAL: AUTHENTICATION / SWITCH USER ── -->
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- ── MODAL: LOGIN / SWITCH USER ── -->
   <div class="modal-backdrop" id="modal-login">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">Role-Based Access Control (RBAC)</h3>
+        <h3 class="modal-title">Clinical Role Authentication</h3>
         <button class="btn-icon" id="btn-close-login-modal">✕</button>
       </div>
-      <p style="font-size:12px; color:var(--text-muted);">Select a designated hospital persona or enter credentials:</p>
-      
-      <!-- Quick Persona Switch Buttons -->
-      <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px;">
-        <button class="btn btn-outline" style="font-size:11px;" onclick="AarogyaApp.quickLogin('doctor', 'doctor123')">
-          🩺 Dr. Sarah<br><small style="color:var(--accent-cyan)">DOCTOR</small>
-        </button>
-        <button class="btn btn-outline" style="font-size:11px;" onclick="AarogyaApp.quickLogin('nurse', 'nurse123')">
-          👩‍⚕️ Nurse Priya<br><small style="color:var(--accent-cyan)">NURSE</small>
-        </button>
-        <button class="btn btn-outline" style="font-size:11px;" onclick="AarogyaApp.quickLogin('admin', 'admin123')">
-          ⚙️ Admin<br><small style="color:var(--accent-cyan)">ADMIN</small>
-        </button>
-        <button class="btn btn-outline" style="font-size:11px;" onclick="AarogyaApp.quickLogin('patient', 'patient123')">
-          🛏️ Arun Patel<br><small style="color:var(--accent-cyan)">PATIENT</small>
-        </button>
-        <button class="btn btn-outline" style="font-size:11px;" onclick="AarogyaApp.quickLogin('visitor', 'visitor123')">
-          🚶 Vikram V.<br><small style="color:var(--accent-cyan)">VISITOR</small>
-        </button>
-      </div>
-
-      <div style="position:relative; text-align:center; margin:6px 0;">
-        <span style="background:#0f172a; padding:0 8px; font-size:11px; color:var(--text-dim);">OR ENTER CREDENTIALS</span>
-      </div>
-
-      <form id="form-login" style="display:flex; flex-direction:column; gap:12px;">
+      <form id="form-login" class="modal-body">
         <div class="form-group">
           <label class="form-label">Username</label>
-          <input type="text" class="form-input" id="login-username" required placeholder="doctor">
+          <input type="text" class="form-control" id="login-username" required />
         </div>
         <div class="form-group">
           <label class="form-label">Password</label>
-          <input type="password" class="form-input" id="login-password" required placeholder="••••••••">
+          <input type="password" class="form-control" id="login-password" required />
         </div>
-        <button type="submit" class="btn btn-primary" style="justify-content:center; margin-top:8px;">
-          Authenticate & Apply RBAC
-        </button>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
+          <button type="button" class="btn btn-secondary" onclick="AarogyaApp.quickLogin('doctor', 'doctor123')">Doctor Login</button>
+          <button type="button" class="btn btn-secondary" onclick="AarogyaApp.quickLogin('admin', 'admin123')">Admin Login</button>
+          <button type="submit" class="btn btn-primary">Sign In</button>
+        </div>
       </form>
     </div>
   </div>
@@ -490,58 +1144,52 @@
   <div class="modal-backdrop" id="modal-voice">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">Natural Language Voice Gateway</h3>
+        <h3 class="modal-title">Voice Command Interface</h3>
         <button class="btn-icon" id="btn-close-voice-modal">✕</button>
       </div>
-      <div class="voice-mic-pulsing" id="voice-mic-indicator" title="Click to start listening">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      <div class="modal-body">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+          <button class="btn btn-outline" id="voice-mic-indicator" style="padding:10px;">🎙 Speak</button>
+          <span style="font-size:12px; color:var(--text-muted);" id="voice-status-text">Wake word: "Hey Arogya"</span>
+        </div>
+        <div class="form-group">
+          <input type="text" class="form-control" id="voice-input-text" placeholder="Or type clinical command (e.g. 'Deliver Paracetamol to ICU Bed 1')..." />
+        </div>
+        <div id="voice-result-box" style="display:none; padding:10px; background:rgba(0,0,0,0.4); border-radius:4px; font-family:var(--font-mono); font-size:11px;"></div>
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="button" class="btn btn-primary" id="btn-submit-voice">Execute Command</button>
+        </div>
       </div>
-      <p style="text-align:center; font-size:12px; color:var(--text-muted);" id="voice-prompt-status">
-        Speak into your microphone or enter hospital request below:
-      </p>
-
-      <div class="form-group">
-        <input type="text" class="form-input" id="voice-command-text" placeholder="e.g. 'Deliver Paracetamol to Arun Patel in ICU Bed 3' or 'Where is the Pharmacy?'">
-      </div>
-
-      <div style="display:flex; gap:8px;">
-        <button class="btn btn-primary" style="flex:1; justify-content:center;" id="btn-submit-voice">
-          Execute Voice Command
-        </button>
-      </div>
-
-      <div id="voice-result-box" style="display:none; padding:12px; background:rgba(255,255,255,0.04); border-radius:var(--radius-sm); font-size:12px; border:1px solid var(--border-subtle);"></div>
     </div>
   </div>
 
-  <!-- ── MODAL: CREATE DELIVERY TASK ── -->
+  <!-- ── MODAL: CREATE MISSION / DELIVERY TASK ── -->
   <div class="modal-backdrop" id="modal-create-task">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">Dispatch Autonomous Delivery Task</h3>
+        <h3 class="modal-title">Dispatch Autonomous Mobile Robot</h3>
         <button class="btn-icon" id="btn-close-task-modal">✕</button>
       </div>
-      <form id="form-create-task" style="display:flex; flex-direction:column; gap:12px;">
+      <form id="form-create-task" class="modal-body">
         <div class="form-group">
-          <label class="form-label">Patient</label>
-          <select class="form-select" id="task-patient-select" required></select>
+          <label class="form-label">Destination Room / Bed</label>
+          <select class="form-control" id="task-room-select" required></select>
         </div>
         <div class="form-group">
-          <label class="form-label">Medicine</label>
-          <select class="form-select" id="task-medicine-select" required></select>
+          <label class="form-label">Prescription / Payload Item</label>
+          <select class="form-control" id="task-rx-select"></select>
         </div>
         <div class="form-group">
-          <label class="form-label">Priority</label>
-          <select class="form-select" id="task-priority-select">
-            <option value="NORMAL" selected>Normal</option>
-            <option value="HIGH">High (Urgent)</option>
-            <option value="EMERGENCY">Emergency (Preemptive)</option>
-            <option value="LOW">Low</option>
+          <label class="form-label">Priority Level</label>
+          <select class="form-control" id="task-priority-select">
+            <option value="NORMAL">Normal Routine Delivery</option>
+            <option value="HIGH">High Priority (Stat Medication)</option>
+            <option value="EMERGENCY">Emergency (Code Blue Critical)</option>
           </select>
         </div>
-        <button type="submit" class="btn btn-primary" style="justify-content:center; margin-top:8px;">
-          Create & Verify Task
-        </button>
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="submit" class="btn btn-primary">Dispatch AMR</button>
+        </div>
       </form>
     </div>
   </div>
@@ -550,40 +1198,84 @@
   <div class="modal-backdrop" id="modal-create-rx">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">Clinical Prescription Order</h3>
+        <h3 class="modal-title">New Clinical Prescription</h3>
         <button class="btn-icon" id="btn-close-rx-modal">✕</button>
       </div>
-      <form id="form-create-rx" style="display:flex; flex-direction:column; gap:12px;">
+      <form id="form-create-rx" class="modal-body">
         <div class="form-group">
           <label class="form-label">Patient</label>
-          <select class="form-select" id="rx-patient-select" required></select>
+          <select class="form-control" id="rx-patient-select" required></select>
         </div>
         <div class="form-group">
-          <label class="form-label">Medicine</label>
-          <select class="form-select" id="rx-medicine-select" required></select>
+          <label class="form-label">Medication</label>
+          <select class="form-control" id="rx-medicine-select" required></select>
         </div>
         <div class="form-group">
-          <label class="form-label">Dosage</label>
-          <input type="text" class="form-input" id="rx-dosage-input" value="650mg" required>
+          <label class="form-label">Dosage & Instructions</label>
+          <input type="text" class="form-control" id="rx-dosage" placeholder="e.g. 500mg IV STAT" required />
         </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-          <div class="form-group">
-            <label class="form-label">Frequency (Hours)</label>
-            <input type="number" class="form-input" id="rx-freq-input" value="8" min="1" max="48" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Duration (Days)</label>
-            <input type="number" class="form-input" id="rx-duration-input" value="7" min="1" max="90" required>
-          </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px;">
+          <button type="submit" class="btn btn-primary">Save Prescription</button>
         </div>
-        <button type="submit" class="btn btn-primary" style="justify-content:center; margin-top:8px;">
-          Sign & Issue Prescription
-        </button>
       </form>
     </div>
   </div>
 
-  <!-- Main JavaScript Bundle -->
-  <script src="/static/js/app.js"></script>
+  <!-- ── MODAL: SIMULATION STARTUP VERIFICATION ── -->
+  <div class="modal-backdrop" id="modal-sim-startup">
+    <div class="modal-content" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3 class="modal-title">NVIDIA Isaac Sim 5.1 Startup Sequence</h3>
+        <button class="btn-icon" onclick="AarogyaApp.closeModal('modal-sim-startup')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size:12px; color:var(--text-muted); margin-bottom:12px;" id="startup-status-note">
+          Spawning NVIDIA Isaac Sim 5.1 in interactive 3D desktop window station...
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div class="badge badge-active" id="check-backend">✓ 1. Backend Server Online (FastAPI)</div>
+          <div class="badge badge-active" id="check-mission">✓ 2. Mission & Coordinator Engine Active</div>
+          <div class="badge badge-offline" id="check-ros2">○ 3. Desktop WinSta0 Console Attached</div>
+          <div class="badge badge-offline" id="check-isaac">○ 4. Python Kit Engine Booting (isaacsim.exp.full.kit)</div>
+          <div class="badge badge-offline" id="check-hospital">○ 5. RTX Real-Time Renderer & Shaders Compiled</div>
+          <div class="badge badge-offline" id="check-robot">○ 6. Hospital USD Stage & 28 Departments Loaded</div>
+          <div class="badge badge-offline" id="check-sensors">○ 7. 4 Fleet AMRs Spawned on Home Pads</div>
+          <div class="badge badge-offline" id="check-ready">○ 8. Isaac Sim Perception Stream & Web Telemetry Online</div>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:14px;">
+          <button type="button" class="btn btn-primary" onclick="AarogyaApp.closeModal('modal-sim-startup')">Proceed to Console</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL: DIGITAL TWIN MISSION REPLAY ── -->
+  <div class="modal-backdrop" id="modal-mission-replay">
+    <div class="modal-content" style="max-width: 720px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Digital Twin Mission Replay</h3>
+        <button class="btn-icon" id="btn-close-replay-modal">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="canvas-wrapper" style="height:260px;">
+          <canvas id="mission-replay-canvas" style="width:100%; height:100%; display:block;"></canvas>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:12px; color:var(--text-muted);" id="replay-mission-summary">Recorded Telemetry Trajectory</span>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-primary" id="btn-replay-play">▶ Play</button>
+            <button class="btn btn-secondary" id="btn-replay-reset">↺ Reset</button>
+          </div>
+        </div>
+        <div style="max-height:140px; overflow-y:auto; display:flex; flex-direction:column; gap:4px;" id="replay-timeline-steps"></div>
+      </div>
+      <div class="modal-header" style="justify-content:flex-end; border-top:1px solid var(--border-subtle); border-bottom:none;">
+        <button class="btn btn-secondary" id="btn-dismiss-replay-modal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Application Script -->
+  <script src="/static/js/app.js?v=4.0.1"></script>
 </body>
 </html>

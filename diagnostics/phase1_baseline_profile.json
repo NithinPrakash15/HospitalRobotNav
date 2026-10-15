@@ -1,0 +1,107 @@
+{
+  "Stage 1: Empty Scene": {
+    "fps": 3047.9,
+    "frame_time_ms": 0.33,
+    "gpu_util_pct": 11.0,
+    "gpu_vram_used_mb": 1196.0,
+    "gpu_vram_total_mb": 6141.0,
+    "cpu_util_pct": 48.4,
+    "ram_used_mb": 13376.2,
+    "ram_total_mb": 16000.7,
+    "ram_util_pct": 83.6
+  },
+  "Stage 2: Hospital Scene (No Robots)": {
+    "fps": 278.3,
+    "frame_time_ms": 3.59,
+    "gpu_util_pct": 1.0,
+    "gpu_vram_used_mb": 2829.0,
+    "gpu_vram_total_mb": 6141.0,
+    "cpu_util_pct": 62.3,
+    "ram_used_mb": 15377.9,
+    "ram_total_mb": 16000.7,
+    "ram_util_pct": 96.1
+  },
+  "Stage 3: Hospital + 1 Robot": {
+    "fps": 267.4,
+    "frame_time_ms": 3.74,
+    "gpu_util_pct": 2.0,
+    "gpu_vram_used_mb": 2921.0,
+    "gpu_vram_total_mb": 6141.0,
+    "cpu_util_pct": 64.0,
+    "ram_used_mb": 15402.7,
+    "ram_total_mb": 16000.7,
+    "ram_util_pct": 96.3
+  },
+  "Stage 4: Robot with Physics": {
+    "fps": 932.9,
+    "frame_time_ms": 1.07,
+    "physics_time_ms": 1.04,
+    "kinematics_time_ms": 0.03,
+    "gpu_util_pct": 1.0,
+    "gpu_vram_used_mb": 2921.0,
+    "gpu_vram_total_mb": 6141.0,
+    "cpu_util_pct": 39.1,
+    "ram_used_mb": 15405.4,
+    "ram_total_mb": 16000.7,
+    "ram_util_pct": 96.3
+  },
+  "Stage 5: Robot with Camera": {
+    "fps": 13.8,
+    "frame_time_ms": 72.22,
+    "camera_time_ms": 1.91,
+    "gpu_util_pct": 51.0,
+    "gpu_vram_used_mb": 3052.0,
+    "gpu_vram_total_mb": 6141.0,
+    "cpu_util_pct": 79.4,
+    "ram_used_mb": 15499.9,
+    "ram_total_mb": 16000.7,
+    "ram_util_pct": 96.9
+  },
+  "Stage 6: Robot with LiDAR": {
+    "fps": 420.9,
+    "frame_time_ms": 2.38,
+    "lidar_time_ms": 0.16,
+    "gpu_util_pct": 51.0,
+    "gpu_vram_used_mb": 3052.0,
+    "gpu_vram_total_mb": 6141.0,
+    "cpu_util_pct": 81.5,
+    "ram_used_mb": 15542.9,
+    "ram_total_mb": 16000.7,
+    "ram_util_pct": 97.1
+  },
+  "Stage 7: ROS2 Integration": {
+    "fps": 669.0,
+    "frame_time_ms": 1.49,
+    "ros2_overhead_ms": 0.02,
+    "gpu_util_pct": 0.0,
+    "gpu_vram_used_mb": 3052.0,
+    "gpu_vram_total_mb": 6141.0,
+    "cpu_util_pct": 97.4,
+    "ram_used_mb": 15589.1,
+    "ram_total_mb": 16000.7,
+    "ram_util_pct": 97.4
+  },
+  "Stage 8: SLAM Enabled": {
+    "fps": 8.4,
+    "frame_time_ms": 119.23,
+    "slam_time_ms": 112.47,
+    "gpu_util_pct": 14.0,
+    "gpu_vram_used_mb": 3091.0,
+    "gpu_vram_total_mb": 6141.0,
+    "cpu_util_pct": 83.6,
+    "ram_used_mb": 15713.3,
+    "ram_total_mb": 16000.7,
+    "ram_util_pct": 98.2
+  },
+  "Stage 9: Full Application": {
+    "fps": 5.5,
+    "frame_time_ms": 180.46,
+    "gpu_util_pct": 7.0,
+    "gpu_vram_used_mb": 3028.0,
+    "gpu_vram_total_mb": 6141.0,
+    "cpu_util_pct": 72.5,
+    "ram_used_mb": 15706.2,
+    "ram_total_mb": 16000.7,
+    "ram_util_pct": 98.2
+  }
+}

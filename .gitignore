@@ -20,6 +20,11 @@ certificates/*.key
 # Large model weights (re-downloadable)
 models/
 
-# Runtime databases
+# Runtime databases & logs
 data/*.db-shm
 data/*.db-wal
+*.log
+
+# Temporary and archived scratch files
+archive/
+scratch/

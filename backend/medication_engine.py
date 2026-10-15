@@ -169,7 +169,7 @@ class MedicationEngine:
     @staticmethod
     def generate_schedules_for_prescription(db: Session, prescription: Prescription) -> List[MedicationSchedule]:
         """Generates timed medication schedules across the duration of the prescription."""
-        start_time = prescription.start_date or datetime.datetime.utcnow()
+        start_time = prescription.start_date or datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
         hours_interval = max(1, prescription.frequency_hours)
         total_hours = prescription.duration_days * 24
 

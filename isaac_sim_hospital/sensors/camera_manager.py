@@ -45,7 +45,7 @@ class AMRCameraSensor:
         robot_name: str,
         robot_prim_path: str,
         stage: Optional[Any] = None,
-        resolution: Tuple[int, int] = (1280, 720),
+        resolution: Tuple[int, int] = (640, 360),
         focal_length_mm: float = 24.0,
         mounting_offset: Tuple[float, float, float] = (0.18, 0.0, 1.05),
     ) -> None:
@@ -191,7 +191,7 @@ class CameraSensorManager:
     """
     _active_instance: Optional[CameraSensorManager] = None
 
-    def __init__(self, stage: Optional[Any] = None, resolution: Tuple[int, int] = (1280, 720)) -> None:
+    def __init__(self, stage: Optional[Any] = None, resolution: Tuple[int, int] = (640, 360)) -> None:
         global _ACTIVE_CAMERA_MANAGER
         self.stage = stage
         self.resolution = resolution
@@ -403,16 +403,9 @@ class CameraSensorManager:
             return self._last_frame_bytes
 
         try:
-            # Fetch RGB frame directly from the annotator filled by the main simulation render step.
-            # Avoid redundant rep.orchestrator.step() which causes severe main-thread stalls,
-            # Vulkan sync queue contention, and AppHang crashes.
+            # Fetch RGB frame directly from the annotator populated by the render pipeline.
+            # Avoid synchronous rep.orchestrator.step() which blocks the main thread on RTX 4050.
             data = self._rgb_ann.get_data()
-            if data is None or getattr(data, "size", 0) == 0:
-                try:
-                    rep.orchestrator.step(rt_subframes=1, pause_timeline=False, delta_time=0.0)
-                    data = self._rgb_ann.get_data()
-                except Exception:
-                    pass
 
             if data is not None and getattr(data, "size", 0) > 0 and len(data.shape) == 3:
                 # Actual uint8 RGB frame from Isaac Sim

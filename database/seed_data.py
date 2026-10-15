@@ -136,6 +136,11 @@ def seed_database(force: bool = False) -> None:
             {"username": "nurse_rahul", "full_name": "Nurse Rahul Nair", "role": UserRole.NURSE, "email": "rahul.nair@aarogya.health", "pass": "nurse123"},
             {"username": "patient_arun", "full_name": "Arun Patel", "role": UserRole.PATIENT, "email": "arun.patel@patient.aarogya", "pass": "patient123"},
             {"username": "visitor_maya", "full_name": "Maya Singh", "role": UserRole.VISITOR, "email": "maya.singh@guest.aarogya", "pass": "visitor123"},
+            # Standard persona aliases for direct UI/demo access
+            {"username": "doctor", "full_name": "Dr. Rajesh Sharma (Staff Login)", "role": UserRole.DOCTOR, "email": "doctor@aarogya.health", "pass": "doctor123"},
+            {"username": "nurse", "full_name": "Nurse Priya Verma (Staff Login)", "role": UserRole.NURSE, "email": "nurse@aarogya.health", "pass": "nurse123"},
+            {"username": "patient", "full_name": "Arun Patel (Patient Portal)", "role": UserRole.PATIENT, "email": "patient@aarogya.health", "pass": "patient123"},
+            {"username": "visitor", "full_name": "Hospital Visitor", "role": UserRole.VISITOR, "email": "visitor@aarogya.health", "pass": "visitor123"},
         ]
         user_map = {}
         for u in users_data:

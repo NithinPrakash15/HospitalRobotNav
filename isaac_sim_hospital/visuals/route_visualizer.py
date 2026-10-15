@@ -131,81 +131,94 @@ class HospitalRouteVisualizer:
         self.robot_name = robot_name
         self.destination_name = destination_name
         self.is_emergency = is_emergency
-        self.current_waypoints = [np.array(wp, dtype=float) for wp in waypoints]
+        raw_wps = [np.array(wp, dtype=float) for wp in waypoints]
+        if len(raw_wps) > 35:
+            # Downsample evenly for 3D visualization to keep USD prim count bounded
+            indices = np.linspace(0, len(raw_wps) - 1, 30, dtype=int)
+            self.current_waypoints = [raw_wps[idx] for idx in indices]
+        else:
+            self.current_waypoints = raw_wps
+
         self.active_waypoint_idx = 0
 
         if not HAS_OMNI or self.stage is None:
             return
 
-        # Palette definition
-        route_color = (1.0, 0.25, 0.20) if is_emergency else (0.0, 0.88, 1.0)       # Alert Red or Bright Cyan
-        active_color = (1.0, 0.95, 0.10)                                              # Vibrant Yellow
-        dest_color = (0.95, 0.85, 0.15) if is_emergency else (0.15, 0.95, 0.85)     # Gold or Cyan Diamond
-        start_color = (0.10, 0.90, 0.40)                                             # Emerald Green
+        try:
+            # Palette definition
+            route_color = (1.0, 0.25, 0.20) if is_emergency else (0.0, 0.88, 1.0)       # Alert Red or Bright Cyan
+            active_color = (1.0, 0.95, 0.10)                                              # Vibrant Yellow
+            dest_color = (0.95, 0.85, 0.15) if is_emergency else (0.15, 0.95, 0.85)     # Gold or Cyan Diamond
+            start_color = (0.10, 0.90, 0.40)                                             # Emerald Green
 
-        n_pts = len(self.current_waypoints)
+            n_pts = len(self.current_waypoints)
 
-        # 1. Draw connecting path ribbons between consecutive waypoints
-        for i in range(n_pts - 1):
-            p1 = self.current_waypoints[i]
-            p2 = self.current_waypoints[i + 1]
-            dx = float(p2[0] - p1[0])
-            dy = float(p2[1] - p1[1])
-            length = float(np.hypot(dx, dy))
-            if length < 0.05:
-                continue
+            # 1. Draw connecting path ribbons between consecutive waypoints
+            for i in range(n_pts - 1):
+                p1 = self.current_waypoints[i]
+                p2 = self.current_waypoints[i + 1]
+                dx = float(p2[0] - p1[0])
+                dy = float(p2[1] - p1[1])
+                length = float(np.hypot(dx, dy))
+                if length < 0.05:
+                    continue
 
-            mid_x = float(p1[0] + dx / 2.0)
-            mid_y = float(p1[1] + dy / 2.0)
-            yaw = float(math.atan2(dy, dx))
+                mid_x = float(p1[0] + dx / 2.0)
+                mid_y = float(p1[1] + dy / 2.0)
+                yaw = float(math.atan2(dy, dx))
 
-            _create_floor_box(
-                self.stage,
-                self.ROOT_PRIM,
-                f"Seg_{i:03d}",
-                pos=(mid_x, mid_y, 0.016),
-                size=(length, 0.16, 0.012),
-                color=route_color,
-                yaw_rad=yaw,
-            )
-
-        # 2. Draw waypoint floor markers
-        for i, wp in enumerate(self.current_waypoints):
-            col = start_color if i == 0 else (dest_color if i == n_pts - 1 else route_color)
-            if i == 0:
-                # Start Beacon (Disc + Pillar)
                 _create_floor_box(
-                    self.stage, self.ROOT_PRIM, f"WP_{i:03d}_Disc",
-                    pos=(float(wp[0]), float(wp[1]), 0.020),
-                    size=(0.65, 0.65, 0.020),
-                    color=start_color,
-                )
-            elif i == n_pts - 1:
-                # Destination Beacon (Diamond / Pillar)
-                _create_floor_box(
-                    self.stage, self.ROOT_PRIM, f"WP_{i:03d}_Dest",
-                    pos=(float(wp[0]), float(wp[1]), 0.025),
-                    size=(0.75, 0.75, 0.030),
-                    color=dest_color,
-                    yaw_rad=math.pi / 4.0,  # 45 deg rotation for diamond look
-                )
-                _create_floor_box(
-                    self.stage, self.ROOT_PRIM, f"WP_{i:03d}_Pillar",
-                    pos=(float(wp[0]), float(wp[1]), 0.35),
-                    size=(0.14, 0.14, 0.60),
-                    color=dest_color,
-                )
-            else:
-                # Standard Waypoint Marker
-                _create_floor_box(
-                    self.stage, self.ROOT_PRIM, f"WP_{i:03d}",
-                    pos=(float(wp[0]), float(wp[1]), 0.018),
-                    size=(0.32, 0.32, 0.015),
-                    color=col,
+                    self.stage,
+                    self.ROOT_PRIM,
+                    f"Seg_{i:03d}",
+                    pos=(mid_x, mid_y, 0.016),
+                    size=(length, 0.16, 0.012),
+                    color=route_color,
+                    yaw_rad=yaw,
                 )
 
-        # Highlight first target waypoint
-        self.update_progress(0)
+            # 2. Draw waypoint floor markers
+            for i, wp in enumerate(self.current_waypoints):
+                col = start_color if i == 0 else (dest_color if i == n_pts - 1 else route_color)
+                if i == 0:
+                    # Start Beacon (Disc + Pillar)
+                    _create_floor_box(
+                        self.stage, self.ROOT_PRIM, f"WP_{i:03d}_Disc",
+                        pos=(float(wp[0]), float(wp[1]), 0.020),
+                        size=(0.65, 0.65, 0.020),
+                        color=start_color,
+                    )
+                elif i == n_pts - 1:
+                    # Destination Beacon (Diamond / Pillar)
+                    _create_floor_box(
+                        self.stage, self.ROOT_PRIM, f"WP_{i:03d}_Dest",
+                        pos=(float(wp[0]), float(wp[1]), 0.025),
+                        size=(0.75, 0.75, 0.030),
+                        color=dest_color,
+                        yaw_rad=math.pi / 4.0,  # 45 deg rotation for diamond look
+                    )
+                    _create_floor_box(
+                        self.stage, self.ROOT_PRIM, f"WP_{i:03d}_Pillar",
+                        pos=(float(wp[0]), float(wp[1]), 0.35),
+                        size=(0.14, 0.14, 0.60),
+                        color=dest_color,
+                    )
+                else:
+                    # Standard Waypoint Marker
+                    _create_floor_box(
+                        self.stage, self.ROOT_PRIM, f"WP_{i:03d}",
+                        pos=(float(wp[0]), float(wp[1]), 0.018),
+                        size=(0.32, 0.32, 0.015),
+                        color=col,
+                    )
+
+            # Highlight first target waypoint
+            try:
+                self.update_progress(0)
+            except Exception:
+                pass
+        except Exception as e:
+            print(f"[VISUALIZER] Notice: USD prim render bypassed: {e}")
 
     def update_progress(self, current_waypoint_idx: int) -> None:
         """Update visual state of waypoints as AMR navigates along the route."""

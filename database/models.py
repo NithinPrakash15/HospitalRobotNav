@@ -8,8 +8,13 @@ robot task lifecycle, RBAC authentication, and audit trails.
 from __future__ import annotations
 
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+
+
+def utc_now() -> datetime:
+    """Return timezone-naive UTC datetime for SQLite compatibility without deprecation warnings."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 from sqlalchemy import (
     Boolean,
@@ -126,7 +131,7 @@ class User(Base):
     email: Mapped[Optional[str]] = mapped_column(String(128), unique=True, nullable=True)
     phone: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
     # Profiles
     doctor_profile: Mapped[Optional[Doctor]] = relationship("Doctor", back_populates="user", uselist=False)
@@ -221,7 +226,7 @@ class Patient(Base):
     gender: Mapped[str] = mapped_column(String(16), default="Other")
     blood_type: Mapped[str] = mapped_column(String(8), default="O+")
     condition: Mapped[str] = mapped_column(String(128), default="Stable")
-    admission_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    admission_date: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
     discharge_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     status: Mapped[PatientStatusEnum] = mapped_column(
         Enum(PatientStatusEnum), default=PatientStatusEnum.ACTIVE, nullable=False, index=True
@@ -271,15 +276,15 @@ class Prescription(Base):
     frequency: Mapped[str] = mapped_column(String(64), default="Every 8 hours")
     frequency_hours: Mapped[int] = mapped_column(Integer, default=8)
     route: Mapped[str] = mapped_column(String(32), default="Oral")
-    start_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    start_date: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
     end_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     duration_days: Mapped[int] = mapped_column(Integer, default=7)
     status: Mapped[PrescriptionStatusEnum] = mapped_column(
         Enum(PrescriptionStatusEnum), default=PrescriptionStatusEnum.ACTIVE, nullable=False, index=True
     )
     instructions: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, onupdate=utc_now)
 
     patient: Mapped[Patient] = relationship("Patient", back_populates="prescriptions")
     doctor: Mapped[Doctor] = relationship("Doctor", back_populates="prescriptions")
@@ -326,7 +331,7 @@ class Robot(Base):
     target_x: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     target_y: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     is_available: Mapped[bool] = mapped_column(Boolean, default=True)
-    last_heartbeat: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    last_heartbeat: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
 
     tasks: Mapped[List[RobotTask]] = relationship("RobotTask", back_populates="assigned_robot")
 
@@ -358,7 +363,7 @@ class RobotTask(Base):
     cancellation_reason: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
     failure_reason: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
     progress_pct: Mapped[float] = mapped_column(Float, default=0.0)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, index=True)
     started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
@@ -382,7 +387,7 @@ class TaskEvent(Base):
     to_status: Mapped[str] = mapped_column(String(32), nullable=False)
     triggered_by: Mapped[str] = mapped_column(String(64), default="System")
     message: Mapped[str] = mapped_column(String(256), default="")
-    timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, default=utc_now, index=True)
     metadata_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     task: Mapped[RobotTask] = relationship("RobotTask", back_populates="events")
@@ -393,8 +398,8 @@ class Attendance(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
-    date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    check_in: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    date: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
+    check_in: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
     check_out: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="PRESENT")
 
@@ -411,7 +416,7 @@ class EmergencyEvent(Base):
     assigned_robot_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("robots.id"), nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="ACTIVE")
     details: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now)
     resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
 
@@ -419,7 +424,7 @@ class AuditLog(Base):
     __tablename__ = "audit_logs"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, default=utc_now, index=True)
     user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
     username: Mapped[str] = mapped_column(String(64), default="anonymous")
     user_role: Mapped[str] = mapped_column(String(32), default="VISITOR")

@@ -117,6 +117,14 @@ def test_authorized_clinical_workflow_and_duplicate_prevention(client, db):
     pat = db.query(Patient).filter(Patient.patient_code == "P001").first()
     med = db.query(Medicine).filter(Medicine.medicine_code == "MED002").first()
 
+    # Clean up prior active tasks to guarantee test isolation
+    db.query(RobotTask).filter(
+        RobotTask.patient_id == pat.id,
+        RobotTask.medicine_id == med.id,
+        RobotTask.status.in_([TaskStatusEnum.PENDING, TaskStatusEnum.ASSIGNED, TaskStatusEnum.IN_PROGRESS]),
+    ).update({"status": TaskStatusEnum.DELIVERED})
+    db.commit()
+
     # Step 1: Doctor creates task
     res1 = client.post(
         "/api/tasks/create-delivery",

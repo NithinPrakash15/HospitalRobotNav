@@ -28,6 +28,7 @@ Kinematics & Autonomy:
 from __future__ import annotations
 
 from typing import List, Optional, Tuple, Dict, Any
+import math
 import numpy as np
 import time
 import uuid
@@ -176,10 +177,11 @@ class HospitalAMR:
 
         # Safety & Collision Guard
         self.collision_guard = None
-        self.robot_radius = 0.38
+        self.robot_radius = 0.32
         self.is_blocked = False
         self.blocked_timer = 0
         self.dynamic_slowdown = 1.0
+        self.recovery_attempts = 0
 
         # State Machine & Priority
         self.state_machine = RobotStateMachine(initial_state=RobotState.IDLE)
@@ -531,17 +533,16 @@ class HospitalAMR:
         if not self.waypoints or not self.destination_name:
             return False
 
-        # Requirement 6: If already replanned with active detour waypoints, do not thrash A* route calculation
-        if getattr(self, "is_replanned", False) and getattr(self, "replanned_route", None):
-            return True
-
-        # Requirement 6: Debounce/cooldown to prevent path planner thrashing every frame
+        # Debounce/cooldown to prevent path planner thrashing every frame while allowing secondary replanning
         now = time.time()
+        now_sim = getattr(self, "sim_time", 0.0)
         last_t = getattr(self, "_last_replan_time", 0.0)
-        cooldown = getattr(self, "_replan_cooldown_s", 2.0)
-        if now - last_t < cooldown:
-            return False
+        last_sim_t = getattr(self, "_last_replan_sim_time", -999.0)
+        cooldown = getattr(self, "_replan_cooldown_s", 1.5)
+        if (now - last_t < cooldown) and (now_sim - last_sim_t < cooldown):
+            return bool(getattr(self, "replanned_route", None))
         self._last_replan_time = now
+        self._last_replan_sim_time = now_sim
 
         detour: List[Tuple[float, float]] = []
         try:
@@ -570,7 +571,7 @@ class HospitalAMR:
                     (self.x, self.y),
                     (float(goal_target[0]), float(goal_target[1])),
                     dynamic_obstacles=dynamic_obstacles,
-                    obstacle_radius=0.9,
+                    obstacle_radius=0.68,
                 )
             else:
                 detour = self.collision_guard.plan_path_astar(
@@ -763,6 +764,31 @@ class HospitalAMR:
         self.current_task_description = "Standing by (AVAILABLE)"
 
 
+    def is_obstacle_blocking_path(
+        self,
+        obstacle_pos: Tuple[float, float],
+        clearance_margin: float = 0.45,
+    ) -> bool:
+        """Check if an obstacle intersects the active forward path segment."""
+        if not self.waypoints or self.current_waypoint_idx >= len(self.waypoints):
+            return False
+
+        target = self.waypoints[self.current_waypoint_idx]
+        x1, y1 = self.x, self.y
+        x2, y2 = float(target[0]), float(target[1])
+        dx = x2 - x1
+        dy = y2 - y1
+        l2 = dx * dx + dy * dy
+        ox, oy = float(obstacle_pos[0]), float(obstacle_pos[1])
+        if l2 < 1e-6:
+            return math.hypot(ox - x1, oy - y1) < clearance_margin
+
+        t = max(0.0, min(1.0, ((ox - x1) * dx + (oy - y1) * dy) / l2))
+        proj_x = x1 + t * dx
+        proj_y = y1 + t * dy
+        dist_to_seg = math.hypot(ox - proj_x, oy - proj_y)
+        return dist_to_seg < clearance_margin
+
     def check_dynamic_obstacles(
         self,
         dynamic_obstacle_positions: List[Tuple[float, float]],
@@ -775,26 +801,37 @@ class HospitalAMR:
             Supports both 2-element unpack (is_crit, dist) and .closest_pos attribute.
         """
         if not dynamic_obstacle_positions:
-            return False, 999.0, None
+            return ObstacleCheckResult(False, 999.0, None)
 
         closest_dist = 999.0
         closest_pos: Optional[Tuple[float, float]] = None
         forward_x = np.cos(self.yaw)
         forward_y = np.sin(self.yaw)
+        is_critical = False
 
         for obs in dynamic_obstacle_positions:
             ox, oy = float(obs[0]), float(obs[1])
             dx = ox - self.x
             dy = oy - self.y
             dist = float(np.hypot(dx, dy))
+
+            longitudinal = dx * forward_x + dy * forward_y
+            lateral = -dx * forward_y + dy * forward_x
+
             if dist < safety_radius:
-                dot = forward_x * dx + forward_y * dy
-                if dist < 0.85 or dot > 0.0:  # Immediate proximity or forward hemisphere
+                if dist < 0.85 or longitudinal > -0.20:
                     if dist < closest_dist:
                         closest_dist = dist
                         closest_pos = (float(ox), float(oy))
 
-        is_critical = closest_dist < 0.65
+            # Critical block conditions:
+            # 1. Immediate physical contact boundary (< 0.43m, robot radius 0.38 + 0.05 margin)
+            if dist < 0.43:
+                is_critical = True
+            # 2. Forward corridor collision: directly in front of bumper within 0.65m
+            elif longitudinal > 0.0 and longitudinal < 0.65 and abs(lateral) < 0.42:
+                is_critical = True
+
         return ObstacleCheckResult(is_critical, closest_dist, closest_pos)
 
     def get_remaining_distance(self) -> float:
@@ -823,16 +860,22 @@ class HospitalAMR:
         """Prim path to the mounted LiDAR sensor puck in USD stage."""
         return f"{self.prim_path}/LiDAR"
 
+    @property
+    def yaw_rad(self) -> float:
+        """Robot heading angle in radians."""
+        return float(self.yaw)
+
     def _update_sensors(
         self,
         dynamic_obstacle_positions: Optional[List[Tuple[float, float]]] = None,
         dynamic_obstacle_agents: Optional[List[Any]] = None,
         peer_robots: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """Update mounted camera, LiDAR, and perception layer sensors at throttled rate (10 Hz)."""
+        """Update mounted camera, LiDAR, and perception layer sensors at throttled rate (10 Hz active, 2 Hz idle)."""
         now = time.time()
-        # Requirement 4 & 7: Throttle sensor processing to 10 Hz (100ms) to keep main simulation thread ultra-fast
-        sensor_interval = 0.10
+        # Throttled sensor processing: 10 Hz for active/moving/exploring robots, 2 Hz for idle robots
+        is_idle = (getattr(getattr(self, "state_machine", None), "state", None) == RobotState.IDLE and not getattr(self, "is_exploring", False))
+        sensor_interval = 0.50 if is_idle else 0.10
         if getattr(self, "_last_sensor_update_time", 0.0) and (now - self._last_sensor_update_time < sensor_interval):
             return
         self._last_sensor_update_time = now
@@ -900,20 +943,71 @@ class HospitalAMR:
             except Exception:
                 pass
 
+    def stop_robot(self, reason: str = "Operator Stop Command") -> None:
+        """Immediately halts physical actuation, clears waypoints, cancels exploration, and resets to IDLE."""
+        self.waypoints = []
+        self.current_waypoint_idx = 0
+        self.linear_speed = 0.0
+        self.angular_speed = 0.0
+        self.is_exploring = False
+        self.action_active = False
+        self.is_teleop_active = False
+        if hasattr(self, "state_machine") and self.state_machine is not None:
+            self.state_machine.transition_to(RobotState.IDLE, reason)
+        self.current_task_description = f"Stopped: {reason}"
+        print(f"[ROBOT ACTUATION] 🛑 {self.name} STOPPED: {reason}")
+
     def step_autonomous(
         self,
         dt: float = 0.016,
         dynamic_obstacle_positions: Optional[List[Tuple[float, float]]] = None,
         dynamic_obstacle_agents: Optional[List[Any]] = None,
         peer_robots: Optional[Dict[str, Any]] = None,
+        cmd_vel: Optional[Tuple[float, float]] = None,
     ) -> None:
         """Autonomous navigation step with battery drain, obstacle avoidance, and state transitions."""
+        self.sim_time = getattr(self, "sim_time", 0.0) + dt
         # 0. Always step attached physical perception sensors (Camera & 360 LiDAR)
         self._update_sensors(
             dynamic_obstacle_positions=dynamic_obstacle_positions,
             dynamic_obstacle_agents=dynamic_obstacle_agents,
             peer_robots=peer_robots,
         )
+
+        # Direct ROS 2 /cmd_vel execution if active velocity provided
+        if cmd_vel is not None:
+            v_val, w_val = float(cmd_vel[0]), float(cmd_vel[1])
+            if abs(v_val) > 0.001 or abs(w_val) > 0.001:
+                self.is_teleop_active = True
+                v_cmd = float(np.clip(v_val, -self.max_linear_speed, self.max_linear_speed))
+                w_cmd = float(np.clip(w_val, -self.max_angular_speed, self.max_angular_speed))
+                candidate_yaw = self.yaw + w_cmd * dt
+                candidate_x = self.x + v_cmd * np.cos(candidate_yaw) * dt
+                candidate_y = self.y + v_cmd * np.sin(candidate_yaw) * dt
+                is_blocked = False
+                if self.collision_guard:
+                    if self.collision_guard.check_point_collision(candidate_x, candidate_y, margin=self.robot_radius):
+                        is_blocked = True
+                if not is_blocked:
+                    self.yaw = candidate_yaw
+                    self.x = float(np.clip(candidate_x, -42.0, 42.0))
+                    self.y = float(np.clip(candidate_y, -36.0, 36.0))
+                    self.linear_speed = v_cmd
+                    self.angular_speed = w_cmd
+                    if HAS_OMNI and hasattr(self, "translate_op") and self.translate_op is not None:
+                        self.translate_op.Set(Gf.Vec3d(self.x, self.y, self.z))
+                        self.rotate_op.Set(float(np.degrees(self.yaw)))
+                    if self.state_machine.state == RobotState.IDLE:
+                        self.state_machine.transition_to(RobotState.NAVIGATING, "Direct ROS 2 /cmd_vel control")
+                    return
+            elif getattr(self, "is_teleop_active", False):
+                # Velocity explicitly zeroed after teleop
+                self.linear_speed = 0.0
+                self.angular_speed = 0.0
+                self.is_teleop_active = False
+                if self.state_machine.state == RobotState.NAVIGATING:
+                    self.state_machine.transition_to(RobotState.IDLE, "Teleop velocity zeroed")
+                return
 
         # 1. Charging logic
         if self.is_charging:
@@ -1037,13 +1131,37 @@ class HospitalAMR:
                             self.last_obstacle_pos = (d_obj.position[0], d_obj.position[1])
                         break
 
-        # Check if obstacle is within critical clearance zone (1.2m)
-        is_obstacle_near = closest_obstacle_dist < 1.20
-        if has_critical_block or is_obstacle_near:
+        # Check if the active forward navigation path segment is blocked by the obstacle
+        is_path_blocked = False
+        if self.last_obstacle_pos and dynamic_obstacle_positions:
+            is_path_blocked = self.is_obstacle_blocking_path(self.last_obstacle_pos, clearance_margin=0.45)
+
+        # Multi-Robot Peer Yielding: lower-priority AMRs (priority > 1) yield if an identified peer is oncoming
+        is_peer_yielding = False
+        if getattr(self, "priority_level", 3) > 1 and peer_robots:
+            for p_name, peer in peer_robots.items():
+                if hasattr(peer, "x") and getattr(peer, "priority_level", 3) < self.priority_level:
+                    p_dist = math.hypot(peer.x - self.x, peer.y - self.y)
+                    if p_dist < 1.80 and is_path_blocked:
+                        is_peer_yielding = True
+                        break
+
+        # Determine whether robot must halt to replan / yield
+        must_halt_and_replan = has_critical_block or is_peer_yielding or (is_path_blocked and closest_obstacle_dist < 1.35)
+
+        if must_halt_and_replan:
             self.is_blocked = True
             self.linear_speed = 0.0
             self.angular_speed = 0.0
             obs_str = f"({self.last_obstacle_pos[0]:.1f}, {self.last_obstacle_pos[1]:.1f})" if self.last_obstacle_pos else "ahead"
+
+            if is_peer_yielding:
+                self.state_machine.transition_to(
+                    RobotState.WAITING_FOR_CLEARANCE,
+                    reason=f"Yielding corridor right-of-way to higher-priority peer ({closest_obstacle_dist:.2f}m ahead)",
+                    action="Stationary; standing by for peer clearance",
+                )
+                return
 
             # Phase 7: Dynamic Human-Aware Yielding
             if is_human_obstacle:
@@ -1076,6 +1194,7 @@ class HospitalAMR:
                             reason=f"Corridor blocked by {detected_human_desc}; no viable detour found",
                             action="Stationary; awaiting corridor to clear",
                         )
+                        return
             else:
                 self.is_yielding_to_human = False
                 self.human_yield_timer = 0
@@ -1098,6 +1217,7 @@ class HospitalAMR:
                         reason=f"Corridor blocked by obstacle ({closest_obstacle_dist:.2f}m); no viable detour found",
                         action="Stationary; awaiting corridor to clear",
                     )
+                    return
 
             # Record explainable reasoning decision (Phase 6)
             try:
@@ -1132,42 +1252,37 @@ class HospitalAMR:
                 except Exception:
                     pass
 
-            if not replan_ok:
-                if not getattr(self, "is_replanned", False):
-                    self.state_machine.transition_to(
-                        RobotState.BLOCKED,
-                        reason=f"BLOCKED: No collision-free route available to {self.destination_name}",
-                        action="Waiting for obstacle clearance or operator override",
-                    )
-                return
-            elif has_critical_block:
+            # Check if newly replanned route successfully bypasses the obstacle
+            new_seg_blocked = False
+            if self.last_obstacle_pos:
+                new_seg_blocked = self.is_obstacle_blocking_path(self.last_obstacle_pos, clearance_margin=0.45)
+
+            if not new_seg_blocked and not has_critical_block:
+                self.is_blocked = (closest_obstacle_dist < 1.80)
+                self.blocked_timer = 0
+                self.dynamic_slowdown = float(np.clip((closest_obstacle_dist - 0.42) / (1.80 - 0.42), 0.35, 1.0))
+            else:
+                self.is_blocked = True
                 return
         else:
             self.blocked_timer = max(0, self.blocked_timer - 1)
             self.is_yielding_to_human = False
             self.human_yield_timer = max(0, self.human_yield_timer - 1)
+            self.is_blocked = (closest_obstacle_dist < 1.80)
+            if closest_obstacle_dist >= 2.0:
+                self.last_obstacle_pos = None  # Reset stale obstacle memory
 
             # Smoothly compute dynamic slowdown factor when in caution envelope
             if is_human_obstacle and closest_obstacle_dist < 2.50:
                 self.dynamic_slowdown = float(np.clip((closest_obstacle_dist - 0.80) / (2.50 - 0.80), 0.20, 1.0))
-                if self.dynamic_slowdown < 0.85 and self.state_machine.state in (RobotState.NAVIGATING, RobotState.BLOCKED):
-                    self.state_machine.transition_to(
-                        RobotState.AVOIDING_OBSTACLE,
-                        f"Cautious human-aware transit ({closest_obstacle_dist:.2f}m from {detected_human_desc})",
-                    )
             elif closest_obstacle_dist < 1.80:
-                self.dynamic_slowdown = float(np.clip((closest_obstacle_dist - 0.65) / (1.80 - 0.65), 0.25, 1.0))
-                if self.dynamic_slowdown < 0.85 and self.state_machine.state in (RobotState.NAVIGATING, RobotState.BLOCKED):
-                    self.state_machine.transition_to(
-                        RobotState.AVOIDING_OBSTACLE,
-                        f"Cautious transit ({closest_obstacle_dist:.2f}m from obstacle)",
-                    )
+                self.dynamic_slowdown = float(np.clip((closest_obstacle_dist - 0.42) / (1.80 - 0.42), 0.35, 1.0))
             else:
                 self.dynamic_slowdown = 1.0
 
-        # 5. Waypoint tracking (goal arrival tolerance 0.40m on final destination pose)
+        # 5. Waypoint tracking (goal arrival tolerance 0.35m on final, 0.22m on intermediate)
         is_final_waypoint = (self.current_waypoint_idx >= len(self.waypoints) - 1)
-        arrival_tolerance = 0.40 if is_final_waypoint else 0.50
+        arrival_tolerance = 0.35 if is_final_waypoint else 0.22
 
         target = self.waypoints[self.current_waypoint_idx]
         dx = target[0] - self.x
@@ -1232,77 +1347,128 @@ class HospitalAMR:
 
         # Continuous Collision Detection Multi-Point Wall Check (Zero wall penetration)
         is_wall_blocked = False
+        blocked_reason_detail = ""
         if self.collision_guard:
             # Check center point
             if self.collision_guard.check_point_collision(candidate_x, candidate_y, margin=self.robot_radius):
                 is_wall_blocked = True
-            # Check front bumper
+                blocked_reason_detail = f"Center footprint violation (margin: {self.robot_radius:.2f}m)"
+            # Check front bumper (0.30m front chassis + 0.10m safety margin)
             elif self.collision_guard.check_point_collision(
-                candidate_x + 0.35 * np.cos(candidate_yaw),
-                candidate_y + 0.35 * np.sin(candidate_yaw),
-                margin=0.20,
+                candidate_x + 0.30 * np.cos(candidate_yaw),
+                candidate_y + 0.30 * np.sin(candidate_yaw),
+                margin=0.10,
             ):
                 is_wall_blocked = True
-            # Check rear bumper
+                blocked_reason_detail = "Front bumper lookahead guard active (+0.30m, margin: 0.10m)"
+            # Check rear bumper (0.25m rear chassis + 0.10m safety margin)
             elif self.collision_guard.check_point_collision(
                 candidate_x - 0.25 * np.cos(candidate_yaw),
                 candidate_y - 0.25 * np.sin(candidate_yaw),
-                margin=0.20,
+                margin=0.10,
             ):
                 is_wall_blocked = True
+                blocked_reason_detail = "Rear bumper guard active (-0.25m, margin: 0.10m)"
             # Check continuous motion segment between current and candidate point
             elif hasattr(self.collision_guard, "is_segment_clear"):
                 if not self.collision_guard.is_segment_clear(
-                    self.x, self.y, candidate_x, candidate_y, margin=self.robot_radius, step_size=0.05
+                    self.x, self.y, candidate_x, candidate_y, margin=self.robot_radius, step_size=0.04
                 ):
                     is_wall_blocked = True
+                    blocked_reason_detail = f"Continuous sweep segment blocked (radius: {self.robot_radius:.2f}m)"
 
         if is_wall_blocked:
             self.is_blocked = True
             self.linear_speed = 0.0
-            # Allow in-place rotation to realign heading towards open space
-            if not self.collision_guard.check_point_collision(
-                self.x + 0.20 * np.cos(candidate_yaw),
-                self.y + 0.20 * np.sin(candidate_yaw),
-                margin=0.20,
-            ):
-                self.yaw = candidate_yaw
-                self.angular_speed = w
+            self.blocked_timer += 1
+
+            # Transition to STUCK_DETECTED -> LOCAL_RECOVERY
+            if self.state_machine.state not in (RobotState.STUCK_DETECTED, RobotState.LOCAL_RECOVERY, RobotState.REPLANNING):
+                self.state_machine.transition_to(
+                    RobotState.STUCK_DETECTED,
+                    reason=f"Wall proximity guard: {blocked_reason_detail}",
+                    action="Engaging local recovery sequence",
+                )
+
+            # Local Recovery Step 1: Micro-backoff if rear is clear
+            if self.collision_guard and self.blocked_timer >= 3:
+                back_x = self.x - 0.12 * np.cos(self.yaw) * dt * 5.0
+                back_y = self.y - 0.12 * np.sin(self.yaw) * dt * 5.0
+                if not self.collision_guard.check_point_collision(back_x, back_y, margin=self.robot_radius):
+                    self.x = back_x
+                    self.y = back_y
+                    self.linear_speed = -0.10
+
+            # Local Recovery Step 2: Sample angular clearance to escape tight corner/doorway
+            best_yaw = candidate_yaw
+            if self.collision_guard:
+                # Check candidate heading first
+                if not self.collision_guard.check_point_collision(
+                    self.x + 0.25 * np.cos(candidate_yaw),
+                    self.y + 0.25 * np.sin(candidate_yaw),
+                    margin=0.20,
+                ):
+                    best_yaw = candidate_yaw
+                else:
+                    # Scan angular offsets (-45, +45, -90, +90, 180) to find open corridor heading
+                    for ang_offset in [-0.785, 0.785, -1.57, 1.57, 3.14]:
+                        test_yaw = self.yaw + ang_offset
+                        if not self.collision_guard.check_point_collision(
+                            self.x + 0.35 * np.cos(test_yaw),
+                            self.y + 0.35 * np.sin(test_yaw),
+                            margin=0.22,
+                        ):
+                            best_yaw = test_yaw
+                            break
+
+            # Turn towards best clearance heading
+            yaw_diff = np.arctan2(np.sin(best_yaw - self.yaw), np.cos(best_yaw - self.yaw))
+            if abs(yaw_diff) > 0.05:
+                w_turn = np.clip(2.0 * yaw_diff, -self.max_angular_speed, self.max_angular_speed)
+                self.yaw += w_turn * dt
+                self.angular_speed = w_turn
             else:
                 self.angular_speed = 0.0
 
-            self.state_machine.transition_to(
-                RobotState.BLOCKED,
-                reason="Wall / furniture lookahead collision guard active",
-                action="Aligning heading to clear corridor",
-            )
-            self.blocked_timer += 1
-            if self.blocked_timer >= 10 and self.waypoints and self.current_waypoint_idx < len(self.waypoints):
+            # Local Recovery Step 3: Global Replan after 12 steps
+            if self.blocked_timer >= 12 and self.waypoints and self.current_waypoint_idx < len(self.waypoints):
                 replan_ok = self._replan_detour(
                     dynamic_obstacles=dynamic_obstacle_positions or [],
-                    reason="Re-routing around static obstruction",
+                    reason="Re-routing around obstruction",
                 )
-                if not replan_ok and self.blocked_timer >= 60:
-                    self.state_machine.transition_to(
-                        RobotState.BLOCKED,
-                        reason=f"BLOCKED: No collision-free route available to {self.destination_name}",
-                        action="Waiting for obstacle clearance or operator override",
-                    )
+                if not replan_ok:
+                    recovery_count = getattr(self, "recovery_attempts", 0) + 1
+                    self.recovery_attempts = recovery_count
+                    if recovery_count >= 3 or self.blocked_timer >= 60:
+                        self.state_machine.transition_to(
+                            RobotState.MISSION_BLOCKED,
+                            reason=f"MISSION BLOCKED: Obstruction unresolvable after {recovery_count} recovery attempts",
+                            action="Stationary safe stop; awaiting coordinator intervention",
+                        )
+                        self.mission_active = False
         else:
-            if not is_obstacle_near:
-                self.is_blocked = False
+            if not is_path_blocked and not has_critical_block:
+                self.is_blocked = (closest_obstacle_dist < 1.80)
             self.linear_speed = v
             self.angular_speed = w
-            if not is_obstacle_near and not has_critical_block:
-                active_nav_state = (
-                    RobotState.EMERGENCY_OVERRIDE if self.priority_level == 1 else RobotState.NAVIGATING
-                )
-                if self.state_machine.state != active_nav_state and self.state_machine.state != RobotState.REPLANNING:
-                    self.state_machine.transition_to(
-                        active_nav_state,
-                        reason="Clear corridor navigation",
-                        action=f"Tracking waypoint {self.current_waypoint_idx}/{len(self.waypoints)}",
+            if not is_path_blocked and not has_critical_block:
+                if self.dynamic_slowdown < 0.90:
+                    if self.state_machine.state not in (RobotState.AVOIDING_OBSTACLE, RobotState.REPLANNING):
+                        self.state_machine.transition_to(
+                            RobotState.AVOIDING_OBSTACLE,
+                            reason=f"Cautious transit around obstacle ({closest_obstacle_dist:.2f}m)",
+                            action="Navigating with caution envelope",
+                        )
+                else:
+                    active_nav_state = (
+                        RobotState.EMERGENCY_OVERRIDE if self.priority_level == 1 else RobotState.NAVIGATING
                     )
+                    if self.state_machine.state != active_nav_state and self.state_machine.state != RobotState.REPLANNING:
+                        self.state_machine.transition_to(
+                            active_nav_state,
+                            reason="Clear corridor navigation",
+                            action=f"Tracking waypoint {self.current_waypoint_idx}/{len(self.waypoints)}",
+                        )
             self.yaw = candidate_yaw
             self.x = candidate_x
             self.y = candidate_y
@@ -1410,7 +1576,7 @@ class EmergencyAMR(HospitalAMR):
     def __init__(
         self,
         prim_path: str = "/World/Robots/Garuda_Emergency",
-        start_position: Tuple[float, float, float] = (-34.0, -8.0, 0.0),
+        start_position: Tuple[float, float, float] = (-29.0, -8.8, 0.0),
         start_yaw: float = 0.0,  # Facing East towards Emergency door
         name: str = "Garuda_Emergency",
         role: str = "EMERGENCY",

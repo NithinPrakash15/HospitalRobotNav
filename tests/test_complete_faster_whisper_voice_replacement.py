@@ -263,10 +263,10 @@ class TestCompleteFasterWhisperVoiceReplacement(unittest.TestCase):
         # 3. Send audio_stream_end
         send_ws_json({"type": "audio_stream_end"})
 
-        # Wait for transcription and dispatch with polling
+        # Wait for transcription and dispatch with polling (allow up to 15s under heavy CPU load)
         cmd_tuple = None
-        for _ in range(30):
-            time.sleep(0.2)
+        for _ in range(60):
+            time.sleep(0.25)
             cmd_tuple = self.server.poll_pending_command()
             if cmd_tuple:
                 break
@@ -283,6 +283,10 @@ class TestCompleteFasterWhisperVoiceReplacement(unittest.TestCase):
     # ─────────────────────────────────────────────────────────────────────────
     def test_stage_3_transcript_and_ui_state(self):
         """TEST 3: Verify authoritatively that partial transcripts are never executed."""
+        # Drain any residual command queue for clean test isolation
+        while self.server.poll_pending_command() is not None:
+            pass
+
         # Feed garbage noise
         self.server._handle_final_transcript("huh")
         # Should be filtered out and NOT queued

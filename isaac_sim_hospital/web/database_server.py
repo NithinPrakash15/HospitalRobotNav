@@ -59,22 +59,24 @@ class HospitalDatabaseStateBridge:
                 break
         return cmds
 
-    def queue_emergency_mission(self, patient_id: str, room_id: str, reason: str = "Clinical Status: EMERGENCY") -> str:
+    def queue_emergency_mission(self, patient_id: str, room_id: str, reason: str = "Clinical Status: EMERGENCY", mission_id: Optional[str] = None, robot_name: str = "Garuda_Emergency") -> str:
         """Triggered from the web UI when a patient transitions to EMERGENCY."""
-        task_id = self.db.create_task(
+        task_id = mission_id or self.db.create_task(
             task_type=TaskType.EMERGENCY_RESPONSE,
             priority=TaskPriority.EMERGENCY,
             patient_id=patient_id,
             source="EMR-01",
             destination=room_id,
             item="Emergency Trauma Kit",
-            assigned_robot="Garuda_Emergency",
+            assigned_robot=robot_name,
             notes=reason,
         )
         cmd = {
             "type": "EMERGENCY",
             "mission_id": task_id,
             "task_id": task_id,
+            "robot": robot_name,
+            "assigned_robot": robot_name,
             "patient_id": patient_id,
             "room_id": room_id,
             "priority": 1,
@@ -83,10 +85,10 @@ class HospitalDatabaseStateBridge:
             "timestamp": time.time(),
         }
         self.pending_robot_commands.put(cmd)
-        print(f"[DB BRIDGE] Queued Code Blue Emergency ({task_id}) for {patient_id} ({room_id}) from Web Portal.", flush=True)
+        print(f"[DB BRIDGE] Queued Code Blue Emergency ({task_id}) for {patient_id} ({room_id}) assigned to {robot_name}.", flush=True)
         return task_id
 
-    def queue_medication_delivery(self, patient_id: str, room_id: str, medicine_name: str, mission_id: Optional[str] = None) -> str:
+    def queue_medication_delivery(self, patient_id: str, room_id: str, medicine_name: str, mission_id: Optional[str] = None, robot_name: str = "Arogya_Delivery") -> str:
         """Triggered from the web UI when medication rounds are ordered."""
         if not mission_id:
             mission_id = self.db.create_task(
@@ -96,12 +98,14 @@ class HospitalDatabaseStateBridge:
                 source="PHM-01",
                 destination=room_id,
                 item=medicine_name,
-                assigned_robot="Arogya_Delivery",
+                assigned_robot=robot_name,
             )
         cmd = {
             "type": "DELIVER_ITEM",
             "mission_id": mission_id,
             "task_id": mission_id,
+            "robot": robot_name,
+            "assigned_robot": robot_name,
             "patient_id": patient_id,
             "destination_location": room_id,
             "item": medicine_name,
@@ -111,12 +115,85 @@ class HospitalDatabaseStateBridge:
             "timestamp": time.time(),
         }
         self.pending_robot_commands.put(cmd)
-        print(f"[DB BRIDGE] Queued Medication Delivery ({mission_id}: {medicine_name}) for {patient_id} ({room_id}).", flush=True)
+        print(f"[DB BRIDGE] Queued Medication Delivery ({mission_id}: {medicine_name}) for {patient_id} ({room_id}) assigned to {robot_name}.", flush=True)
         return mission_id
+
+    def queue_exploration(self, robot_name: str = "Arogya_Delivery", goal: Optional[Any] = None, mission_id: Optional[str] = None) -> str:
+        """Triggered from the web UI / voice when autonomous SLAM frontier exploration is initiated."""
+        if not mission_id:
+            mission_id = f"EXP-{int(time.time())}"
+        goal_coords = list(goal) if (goal is not None and isinstance(goal, (list, tuple))) else None
+        cmd = {
+            "type": "EXPLORE",
+            "mission_id": mission_id,
+            "task_id": mission_id,
+            "robot": robot_name,
+            "goal": goal_coords,
+            "priority": 4,
+            "raw_text": f"Autonomous SLAM Frontier Exploration for {robot_name}",
+            "source": "WEB_UI",
+            "timestamp": time.time(),
+        }
+        self.pending_robot_commands.put(cmd)
+        print(f"[DB BRIDGE] Queued Autonomous SLAM Exploration ({mission_id}) for {robot_name} at goal {goal_coords}.", flush=True)
+        return mission_id
+
+    def queue_toggle_obstacle(self, location: str = "MAIN_CORRIDOR", x: float = 0.0, y: float = 0.0, radius: float = 0.85, obs_id: str = "DYN-OBS-01") -> str:
+        """Triggered from web UI / API to inject or clear a corridor obstacle."""
+        cmd = {
+            "type": "TOGGLE_OBSTACLE",
+            "obs_id": obs_id,
+            "location": location,
+            "x": float(x),
+            "y": float(y),
+            "radius": float(radius),
+            "timestamp": time.time(),
+        }
+    def queue_teleop_command(self, robot_name: str = "Arogya_Delivery", action: str = "stop", linear_speed: float = 0.5, angular_speed: float = 0.8) -> dict:
+        """Triggered from web UI / API for manual robot teleoperation (forward, reverse, left, right, stop)."""
+        cmd = {
+            "type": "TELEOP",
+            "robot": robot_name,
+            "action": action.lower(),
+            "linear_speed": float(linear_speed),
+            "angular_speed": float(angular_speed),
+            "timestamp": time.time(),
+        }
+        self.pending_robot_commands.put(cmd)
+        print(f"[DB BRIDGE] Queued Manual Teleop: {action.upper()} for {robot_name} (v={linear_speed:.2f}, w={angular_speed:.2f})", flush=True)
+        return cmd
 
 
 # Global Singleton Bridge
 DB_BRIDGE = HospitalDatabaseStateBridge()
+
+def queue_teleop_command(robot_name: str = "Arogya_Delivery", action: str = "stop", linear_speed: float = 0.5, angular_speed: float = 0.8) -> dict:
+    """Module-level helper to queue a teleoperation command onto the global bridge."""
+    return DB_BRIDGE.queue_teleop_command(robot_name, action, linear_speed, angular_speed)
+
+def get_next_teleop_command(robot_name: Optional[str] = None) -> Optional[dict]:
+    """Retrieve and drain the next teleop command for the specified robot."""
+    try:
+        q = DB_BRIDGE.pending_robot_commands
+        temp = []
+        found = None
+        while not q.empty():
+            item = q.get_nowait()
+            if found is None and item.get("type") == "TELEOP":
+                if robot_name is None or item.get("robot") == robot_name:
+                    found = item
+                    continue
+            temp.append(item)
+        for t in temp:
+            q.put(t)
+        return found
+    except Exception:
+        return None
+
+# Cross-namespace singleton registration to ensure unified memory instance
+import sys as _sys
+_sys.modules["web.database_server"] = _sys.modules[__name__]
+_sys.modules["isaac_sim_hospital.web.database_server"] = _sys.modules[__name__]
 
 
 class DatabaseRequestHandler(BaseHTTPRequestHandler):

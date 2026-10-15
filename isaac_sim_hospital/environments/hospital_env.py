@@ -103,45 +103,45 @@ class HospitalEnvironment:
             else None
         )
 
-        # Architectural & Wall Colors — Professional Modern Hospital Palette
-        self.color_wall = np.array([0.94, 0.95, 0.96])       # Clean architectural off-white
-        self.color_baseboard = np.array([0.22, 0.25, 0.28])  # Dark slate protective kickplate
-        self.color_floor_slab = np.array([0.88, 0.89, 0.91]) # Medical terrazzo foundation
-        self.color_atrium_floor = np.array([0.92, 0.91, 0.88]) # Warm neutral porcelain tile
-        self.color_room_floor = np.array([0.93, 0.94, 0.95])   # Sterile pale surgical vinyl
-        self.color_corridor = np.array([0.88, 0.89, 0.91])
-        self.color_corridor_accent = np.array([0.84, 0.86, 0.89])
-        self.color_corridor_stripe = np.array([0.20, 0.55, 0.85])  # Architectural guide stripe
+        # Architectural & Wall Colors — Professional Modern Hospital Palette (Restrained, High-Contrast)
+        self.color_wall = np.array([0.70, 0.73, 0.77])       # Clean architectural clinical slate (contrasts with white props)
+        self.color_baseboard = np.array([0.16, 0.18, 0.22])  # Dark slate protective kickplate
+        self.color_floor_slab = np.array([0.40, 0.44, 0.48]) # Medical terrazzo foundation (distinct from walls)
+        self.color_atrium_floor = np.array([0.54, 0.52, 0.48]) # Warm neutral porcelain tile
+        self.color_room_floor = np.array([0.46, 0.50, 0.52])   # Sterile pale surgical vinyl
+        self.color_corridor = np.array([0.48, 0.52, 0.56])   # Clear navigation surface
+        self.color_corridor_accent = np.array([0.36, 0.40, 0.44])
+        self.color_corridor_stripe = np.array([0.15, 0.45, 0.75])  # Clear guide stripe
         self.color_door_beacon = np.array([0.85, 0.75, 0.25])        # Gold door beacon
 
         # Subtle Department Inset & Border Accents (Restrained, Professional Medical Tones)
         self.colors = {
-            "reception":     np.array([0.90, 0.92, 0.91]),  # Muted Sage/Teal Atrium Inset
-            "waiting":       np.array([0.91, 0.91, 0.90]),  # Warm Grey Lounge Inset
-            "pharmacy":      np.array([0.90, 0.93, 0.92]),  # Clean Mint Inset
-            "nurse_station": np.array([0.89, 0.93, 0.92]),  # Clinical Sage Inset
-            "icu":           np.array([0.90, 0.92, 0.95]),  # Ice Blue Clinical Inset
-            "ward":          np.array([0.91, 0.93, 0.92]),  # Seafoam Inset
-            "emergency":     np.array([0.93, 0.90, 0.90]),  # Subtle Emergency Inset
-            "trauma":        np.array([0.94, 0.89, 0.89]),  # Subtle Trauma Inset
-            "consult":       np.array([0.92, 0.91, 0.93]),  # Soft Lavender Inset
-            "ot":            np.array([0.89, 0.93, 0.92]),  # Surgical Teal Inset
-            "lab":           np.array([0.90, 0.92, 0.94]),  # Diagnostic Blue Inset
-            "general_ward":  np.array([0.91, 0.93, 0.92]),  # Calm Seafoam Inset
-            "robot_dock":    np.array([0.89, 0.93, 0.95]),  # Tech Cyan Inset
-            "cafeteria":     np.array([0.93, 0.91, 0.89]),  # Warm Wood Lounge Inset
-            "isolation":     np.array([0.94, 0.93, 0.89]),  # Airborne Amber Inset
-            "storage":       np.array([0.90, 0.91, 0.92]),  # Steel Equipment Inset
-            "med_storage":   np.array([0.92, 0.91, 0.90]),  # Tan Vault Inset
-            "entrance":      np.array([0.91, 0.92, 0.94]),  # Foyer Inset
-            "opd":           np.array([0.92, 0.90, 0.92]),  # Outpatient Inset
-            "washroom":      np.array([0.90, 0.92, 0.94]),  # Sanitary Inset
-            "ot2":           np.array([0.89, 0.93, 0.92]),  # Robotic Surgery Inset
-            "blood_bank":    np.array([0.94, 0.90, 0.91]),  # Transfusion Inset
-            "pediatric":     np.array([0.94, 0.92, 0.89]),  # Pediatric Warm Inset
-            "patient_suite": np.array([0.90, 0.92, 0.94]),  # Deluxe Suite Inset
-            "sanitization":  np.array([0.89, 0.93, 0.92]),  # Sterile Decon Inset
-            "ambulance":     np.array([0.93, 0.90, 0.89]),  # Triage Inset
+            "reception":     np.array([0.50, 0.54, 0.52]),  # Muted Sage/Teal Atrium Inset
+            "waiting":       np.array([0.48, 0.50, 0.52]),  # Warm Grey Lounge Inset
+            "pharmacy":      np.array([0.42, 0.58, 0.52]),  # Clean Mint Inset
+            "nurse_station": np.array([0.44, 0.56, 0.54]),  # Clinical Sage Inset
+            "icu":           np.array([0.42, 0.50, 0.62]),  # Ice Blue Clinical Inset
+            "ward":          np.array([0.46, 0.54, 0.50]),  # Seafoam Inset
+            "emergency":     np.array([0.60, 0.45, 0.45]),  # Subtle Emergency Inset
+            "trauma":        np.array([0.62, 0.42, 0.42]),  # Subtle Trauma Inset
+            "consult":       np.array([0.48, 0.46, 0.52]),  # Soft Lavender Inset
+            "ot":            np.array([0.40, 0.55, 0.50]),  # Surgical Teal Inset
+            "lab":           np.array([0.42, 0.48, 0.58]),  # Diagnostic Blue Inset
+            "general_ward":  np.array([0.46, 0.54, 0.50]),  # Calm Seafoam Inset
+            "robot_dock":    np.array([0.35, 0.55, 0.65]),  # Tech Cyan Inset
+            "cafeteria":     np.array([0.55, 0.48, 0.42]),  # Warm Wood Lounge Inset
+            "isolation":     np.array([0.58, 0.54, 0.40]),  # Airborne Amber Inset
+            "storage":       np.array([0.42, 0.44, 0.46]),  # Steel Equipment Inset
+            "med_storage":   np.array([0.46, 0.48, 0.50]),  # Tan Vault Inset
+            "entrance":      np.array([0.48, 0.52, 0.56]),  # Foyer Inset
+            "opd":           np.array([0.46, 0.48, 0.52]),  # Outpatient Inset
+            "washroom":      np.array([0.44, 0.48, 0.52]),  # Sanitary Inset
+            "ot2":           np.array([0.40, 0.55, 0.50]),  # Robotic Surgery Inset
+            "blood_bank":    np.array([0.58, 0.42, 0.44]),  # Transfusion Inset
+            "pediatric":     np.array([0.56, 0.52, 0.46]),  # Pediatric Warm Inset
+            "patient_suite": np.array([0.46, 0.50, 0.54]),  # Deluxe Suite Inset
+            "sanitization":  np.array([0.40, 0.54, 0.52]),  # Sterile Decon Inset
+            "ambulance":     np.array([0.58, 0.44, 0.42]),  # Triage Inset
         }
 
         # Thin Architectural Trim Accents (for wall stripes & wayfinding lines)
@@ -157,13 +157,13 @@ class HospitalEnvironment:
         }
 
         # Spatial Architecture Color Tokens
-        self.color_garden_paver = np.array([0.74, 0.71, 0.66])    # Warm sandstone outdoor terrace pavers
-        self.color_garden_border = np.array([0.42, 0.40, 0.38])   # Dark stone retaining curb
-        self.color_atrium_medallion = np.array([0.96, 0.94, 0.90])# Warm ivory porcelain rotunda medallion
+        self.color_garden_paver = np.array([0.52, 0.50, 0.46])    # Warm sandstone terrace pavers
+        self.color_garden_border = np.array([0.28, 0.26, 0.24])   # Dark stone retaining curb
+        self.color_atrium_medallion = np.array([0.68, 0.66, 0.62])# Porcelain rotunda medallion
         self.color_atrium_gold = np.array([0.82, 0.70, 0.35])     # Inlaid brass/gold architectural ring
-        self.color_spine_floor = np.array([0.94, 0.95, 0.97])     # Polished white pearl terrazzo concourse
-        self.color_spine_border = np.array([0.20, 0.24, 0.28])    # Dark slate concourse margin band
-        self.color_exterior_ground = np.array([0.84, 0.86, 0.87]) # Neutral exterior ground plane
+        self.color_spine_floor = np.array([0.60, 0.62, 0.66])     # Polished terrazzo concourse
+        self.color_spine_border = np.array([0.16, 0.18, 0.22])    # Dark slate concourse margin band
+        self.color_exterior_ground = np.array([0.14, 0.16, 0.18]) # Neutral dark exterior ground (no white void)
 
         # Furniture Colors
         self.color_desk = np.array([0.28, 0.32, 0.38])
@@ -208,17 +208,17 @@ class HospitalEnvironment:
         return self.semantic_locations
 
     def build_lighting(self) -> None:
-        """Create balanced key and fill lighting."""
+        """Create balanced key and fill lighting with natural depth and contrast."""
         if not HAS_OMNI or self.stage is None:
             return
         sun = UsdLux.DistantLight.Define(self.stage, Sdf.Path("/World/Hospital/SunLight"))
-        sun.CreateIntensityAttr(850.0)
+        sun.CreateIntensityAttr(260.0)
         sun.CreateAngleAttr(0.53)
-        sun.CreateColorAttr(Gf.Vec3f(0.98, 0.98, 1.0))
+        sun.CreateColorAttr(Gf.Vec3f(0.95, 0.94, 0.92))
 
         dome = UsdLux.DomeLight.Define(self.stage, Sdf.Path("/World/Hospital/AmbientLight"))
-        dome.CreateIntensityAttr(450.0)
-        dome.CreateColorAttr(Gf.Vec3f(0.94, 0.96, 0.98))
+        dome.CreateIntensityAttr(110.0)
+        dome.CreateColorAttr(Gf.Vec3f(0.72, 0.76, 0.82))
 
     def build_floors(self) -> None:
         """Create articulated pavilion floor slabs, Central Atrium rotunda medallion, 5.0m Main Spine, and circulation hierarchy."""
@@ -512,12 +512,8 @@ class HospitalEnvironment:
         self._add_wall_box(x=-44.5, y=-7.5, len_x=t, len_y=19.0, name="Perimeter_EmergencyWest", wall_height=h)
         # Emergency Pavilion North Return Wall (Y = 2.0, X in [-44.5, -43.5])
         self._add_wall_box(x=-44.0, y=2.0, len_x=1.0, len_y=t, name="Perimeter_EmergencyReturnN", wall_height=h)
-        # Emergency Pavilion South Return Wall (Y = -17.0, X in [-44.5, -26.0])
-        self._add_wall_box(x=-35.25, y=-17.0, len_x=18.5, len_y=t, name="Perimeter_EmergencyReturnS", wall_height=h)
-
-        # 1c. South-West Healing Garden Setback Wall (X = -26.0, Y in [-37.5, -17.0])
-        # Indoor building facade steps back 17.5m, opening up the exterior Healing Garden Courtyard
-        self._add_wall_box(x=-26.0, y=-27.25, len_x=t, len_y=20.5, name="Perimeter_GardenSetback", wall_height=h)
+        # Note: South Corridor (Y: -18.6 to -17.0) connects Emergency Pavilion seamlessly to South Wing.
+        # Erroneous internal return and setback barriers removed so clinical corridors remain 100% open.
 
         # ── 2. East Boundary Wall (X = 43.5, Y in [-37.5, 37.5]) ─────────────
         self._add_wall_box(x=43.5, y=0.0, len_x=t, len_y=75.0, name="Perimeter_East", wall_height=h)

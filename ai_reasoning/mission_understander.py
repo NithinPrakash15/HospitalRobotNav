@@ -79,6 +79,8 @@ class EmbodiedMissionSpec:
     source_dept: str = "RCT-01"                 # e.g. "PHM-01"
     dest_dept: str = "None"                     # e.g. "PAT-101"
     target_bed: Optional[str] = None            # e.g. "Bed 1"
+    patient_id: Optional[str] = None            # e.g. "P001" canonical patient code
+    target_patient: Optional[str] = None        # e.g. "Arun Patel"
     priority_level: int = 3                     # 1 (Critical) to 5 (Low)
     priority_label: str = "NORMAL"              # "CRITICAL_EMERGENCY", "URGENT", etc.
     urgency_string: str = "ROUTINE"             # "STAT", "URGENT", "ROUTINE"
@@ -88,6 +90,26 @@ class EmbodiedMissionSpec:
     spoken_response_ml: str = ""                # Robot's spoken response in Malayalam
     matched_triggers: List[str] = field(default_factory=list)
     is_emergency: bool = False
+
+    @property
+    def mission_type(self):
+        class _MissionType:
+            def __init__(self, name):
+                self.name = str(name)
+                self.value = str(name)
+            def __str__(self):
+                return self.name
+        return _MissionType(self.task_type)
+
+    @property
+    def priority(self):
+        class _Priority:
+            def __init__(self, name, level):
+                self.name = str(name)
+                self.value = level
+            def __str__(self):
+                return self.name
+        return _Priority(self.priority_label, self.priority_level)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert specification to JSON-serializable dictionary."""
@@ -101,6 +123,8 @@ class EmbodiedMissionSpec:
             "source_dept": self.source_dept,
             "dest_dept": self.dest_dept,
             "target_bed": self.target_bed,
+            "patient_id": self.patient_id,
+            "target_patient": self.target_patient,
             "priority_level": self.priority_level,
             "priority_label": self.priority_label,
             "urgency_string": self.urgency_string,
@@ -362,6 +386,14 @@ class MissionUnderstander:
         """Alias for reason_mission."""
         return self.reason_mission(user_command)
 
+    def parse_command(self, user_command: str) -> EmbodiedMissionSpec:
+        """Alias for reason_mission."""
+        return self.reason_mission(user_command)
+
+    def parse(self, user_command: str) -> EmbodiedMissionSpec:
+        """Alias for reason_mission."""
+        return self.reason_mission(user_command)
+
     def reason_mission(self, user_command: str) -> EmbodiedMissionSpec:
         """
         Execute deep vision-language reasoning on a clinical command.
@@ -600,6 +632,15 @@ class MissionUnderstander:
             resp_hi = f"आदेश स्वीकार किया गया। {dept_name_hi} के लिए कार्य प्रारंभ।"
             resp_ml = f"ആജ്ഞ സ്വീകരിച്ചു. {dept_name_ml}-ലേക്ക് {task_type} നടപടികൾ ആരംഭിക്കുന്നു."
 
+        # Resolve patient_id and target_patient from entities
+        extracted_patient_id = entities.patient_id if getattr(entities, "patient_id", None) else None
+        extracted_patient_name = None
+        if getattr(entities, "persons", None):
+            for person in entities.persons:
+                if person.lower().startswith("patient"):
+                    extracted_patient_name = person.replace("Patient", "").strip()
+                    break
+
         spec = EmbodiedMissionSpec(
             mission_id=mission_id,
             raw_text=raw,
@@ -610,6 +651,8 @@ class MissionUnderstander:
             source_dept=source_dept,
             dest_dept=dest_dept,
             target_bed=target_bed,
+            patient_id=extracted_patient_id,
+            target_patient=extracted_patient_name,
             priority_level=priority_level,
             priority_label=priority_label,
             urgency_string=urgency_string,

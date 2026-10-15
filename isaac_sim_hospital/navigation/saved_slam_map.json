@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "resolution": 0.5,
+    "bounds": [
+      -46.0,
+      46.0,
+      -40.0,
+      40.0
+    ],
+    "rows": 160,
+    "cols": 184,
+    "grid_width_meters": 92.0,
+    "grid_height_meters": 80.0,
+    "free_cells": 0,
+    "occupied_cells": 0,
+    "discovered_walls_count": 0,
+    "unknown_cells": 29440,
+    "dynamic_obstacles_count": 0,
+    "frontiers_count": 0,
+    "exploration_progress_pct": 0.0,
+    "coverage_pct": 0.0,
+    "exploration_complete": true,
+    "status": "COMPLETED",
+    "timestamp": 1791994887.7131689
+  },
+  "grid_shape": [
+    160,
+    184
+  ],
+  "resolution": 0.5,
+  "bounds": [
+    -46.0,
+    46.0,
+    -40.0,
+    40.0
+  ],
+  "discovered_walls": [],
+  "discovered_free_space": [],
+  "dynamic_obstacles": [],
+  "timestamp": 1791994887.7133968
+}

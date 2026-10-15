@@ -24,6 +24,7 @@ from database.models import (
     HospitalRoom,
     Medicine,
     Patient,
+    PrescriptionStatusEnum,
     TaskPriorityEnum,
     User,
     UserRole,
@@ -78,10 +79,13 @@ class VoiceService:
                 return {
                     "success": False,
                     "authorized": False,
+                    "action": "DENIED",
                     "response": denial_msg,
+                    "message": denial_msg,
                     "command": clean_text,
                     "user": username,
                     "role": user_role.value,
+                    "user_role": user_role.value,
                 }
 
         # ── 2. GENERAL VISITOR INQUIRIES & ROOM DIRECTIONS ──────────────────
@@ -103,57 +107,131 @@ class VoiceService:
                     return {
                         "success": True,
                         "authorized": True,
+                        "action": "VISITOR_GUIDANCE",
                         "intent": "NAVIGATIONAL_GUIDANCE",
                         "destination_code": room_id,
+                        "robot_id": "Mitra_Reception",
                         "response": guidance,
+                        "message": guidance,
                         "user": username,
                         "role": user_role.value,
+                        "user_role": user_role.value,
                     }
+
+        # ── 2b. AUTONOMOUS SLAM FRONTIER EXPLORATION COMMANDS ───────────────
+        is_slam_cmd = any(
+            kw in clean_text.lower()
+            for kw in [
+                "start slam",
+                "slam exploration",
+                "slam execution",
+                "slam exeution",
+                "explore hospital",
+                "autonomous exploration",
+                "start exploration",
+                "start mapping",
+                "map hospital",
+                "explore",
+            ]
+        )
+        if is_slam_cmd:
+            from backend.main import trigger_slam_exploration, ExplorationRequest
+            exp_res = trigger_slam_exploration(ExplorationRequest(robot_id="ROBOT-01", mode="FRONTIER_EXPLORATION"))
+            next_t = exp_res.get("next_frontier_target", [0.0, 0.0])
+            msg = f"Autonomous SLAM frontier exploration initiated for Arogya_Delivery. Moving towards unmapped frontier target ({next_t[0]:.1f}, {next_t[1]:.1f})."
+            return {
+                "success": True,
+                "authorized": True,
+                "action": "SLAM_EXPLORATION",
+                "intent": "SLAM_FRONTIER_EXPLORATION",
+                "robot_id": "ROBOT-01",
+                "robot_name": "Arogya_Delivery",
+                "next_frontier_target": next_t,
+                "response": msg,
+                "message": msg,
+                "user": username,
+                "role": user_role.value,
+                "user_role": user_role.value,
+            }
 
         # ── 3. CLINICAL MEDICATION WORKFLOW (AUTHORIZED USER) ───────────────
         # Identify Target Bed / Room / Patient
-        # Target: "ICU Bed 3" or "Arun Patel" or "Bed 101"
         target_patient = None
-        if "icu bed 3" in clean_text.lower() or "bed 3" in clean_text.lower():
-            # Find patient in ICU Bed 3
-            bed = db.query(Bed).filter(Bed.bed_number == "ICU Bed 3").first()
+
+        # 1. Match specific bed in text or spec
+        target_bed_str = getattr(spec, "target_bed", None)
+        if "icu bed 3" in clean_text.lower() or "bed 3" in clean_text.lower() or (target_bed_str and "3" in target_bed_str):
+            bed = db.query(Bed).filter(Bed.bed_number.ilike("%Bed 3%")).first()
             if bed and bed.patients:
                 target_patient = bed.patients[0]
             else:
                 target_patient = db.query(Patient).filter(Patient.patient_code == "P001").first()
 
-        if not target_patient and spec.patient_id:
-            target_patient = db.query(Patient).filter(Patient.patient_code == spec.patient_id).first()
+        # 2. Match patient_id from NLU spec or text (e.g. P001, P002)
+        spec_patient_id = getattr(spec, "patient_id", None)
+        if not target_patient and spec_patient_id:
+            target_patient = db.query(Patient).filter(Patient.patient_code == spec_patient_id).first()
 
+        # 3. Match any bed reference in spec
+        if not target_patient and target_bed_str:
+            bed = db.query(Bed).filter(Bed.bed_number.ilike(f"%{target_bed_str}%")).first()
+            if bed and bed.patients:
+                target_patient = bed.patients[0]
+
+        # 4. Match by patient name
         if not target_patient:
-            # Check by patient names
             all_patients = db.query(Patient).all()
             for p in all_patients:
                 if p.name.lower() in clean_text.lower():
                     target_patient = p
                     break
 
-        if not target_patient:
-            # Default to primary admitted demo patient (Arun Patel, ICU Bed 3)
+        # 5. Default fallback to admitted demo patient if ICU is referenced
+        if not target_patient and ("icu" in clean_text.lower() or "critical care" in clean_text.lower()):
             target_patient = db.query(Patient).filter(Patient.patient_code == "P001").first()
+
+        if not target_patient:
+            return {
+                "success": False,
+                "authorized": True,
+                "error": "PATIENT_NOT_IDENTIFIED",
+                "response": "Could not identify target patient or bed from command. Please specify patient name or bed (e.g., ICU Bed 3).",
+            }
 
         # Identify Medicine
         target_medicine = None
         all_meds = db.query(Medicine).all()
         for m in all_meds:
-            if m.name.lower().split()[0] in clean_text.lower():
+            first_word = m.name.lower().split()[0]
+            if first_word in clean_text.lower():
                 target_medicine = m
                 break
+
+        # Check spec.item
+        spec_item = getattr(spec, "item", "None")
+        if not target_medicine and spec_item and spec_item != "None":
+            for m in all_meds:
+                if m.name.lower() in spec_item.lower() or spec_item.lower() in m.name.lower():
+                    target_medicine = m
+                    break
 
         if not target_medicine:
             # If "medicine" requested without specific name, pick patient's active prescription
             if target_patient and target_patient.prescriptions:
-                active_rxs = [rx for rx in target_patient.prescriptions if rx.status == "ACTIVE"]
+                active_rxs = [rx for rx in target_patient.prescriptions if rx.status == PrescriptionStatusEnum.ACTIVE]
                 if active_rxs:
                     target_medicine = active_rxs[0].medicine
 
         if not target_medicine:
             target_medicine = db.query(Medicine).filter(Medicine.medicine_code == "MED002").first()
+
+        if not target_medicine:
+            return {
+                "success": False,
+                "authorized": True,
+                "error": "MEDICINE_NOT_FOUND",
+                "response": "Could not identify requested medication in hospital formulary. Please verify medicine name.",
+            }
 
         # Determine Priority
         priority = TaskPriorityEnum.NORMAL
@@ -172,23 +250,43 @@ class VoiceService:
                 priority=priority,
             )
             robot_str = task.assigned_robot.name if task.assigned_robot else "Fleet"
+            dispatch_res = getattr(task, "dispatch_result", {}) or {}
+            isaac_ack = bool(dispatch_res.get("isaac_sim_acknowledged", False))
+            stages = dispatch_res.get("stages", [])
+            warning_msg = None if isaac_ack else dispatch_res.get("detail", "Simulation connection pending")
             return {
                 "success": True,
                 "authorized": True,
+                "action": "DISPATCH",
                 "task_id": task.task_code,
+                "task_code": task.task_code,
+                "correlation_id": task.task_code,
                 "status": task.status.value,
                 "robot": robot_str,
+                "robot_id": robot_str,
                 "patient": target_patient.name,
                 "room": task.destination_location,
+                "target": task.destination_location,
                 "medicine": target_medicine.name,
                 "priority": priority.value,
+                "isaac_sim_acknowledged": isaac_ack,
+                "stages": stages,
+                "warning": warning_msg,
                 "response": f"Order confirmed: {task.task_code} dispatched to {robot_str}. Delivering {target_medicine.name} to {target_patient.name} at {task.destination_location}.",
+                "message": f"Order confirmed: {task.task_code} dispatched to {robot_str}. Delivering {target_medicine.name} to {target_patient.name} at {task.destination_location}.",
             }
         except Exception as e:
             # Catch duplicate task or validation error and return structured response
+            detail = getattr(e, "detail", str(e))
+            if isinstance(detail, dict):
+                resp_text = detail.get("message", str(detail))
+            else:
+                resp_text = str(detail)
             return {
                 "success": False,
                 "authorized": True,
-                "error": getattr(e, "detail", str(e)),
-                "response": getattr(e, "detail", str(e)),
+                "action": "ERROR",
+                "error": detail,
+                "response": resp_text,
+                "message": resp_text,
             }

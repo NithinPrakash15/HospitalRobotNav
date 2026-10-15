@@ -1648,14 +1648,17 @@
         const rfidBadge = document.getElementById('checkRfidBadge');
         const roomBadge = document.getElementById('checkRoomBadge');
 
-        if (vResult && vResult.status === 'VERIFIED') {
+        const isVerified = vResult && (vResult.verification_status === 'VERIFIED' || vResult.status === 'VERIFIED' || vResult.status === 'SUCCESS' || vResult.is_success === true);
+        const isMismatch = vResult && (vResult.verification_status === 'MISMATCH' || vResult.status === 'MISMATCH' || vResult.status === 'FAIL' || vResult.status === 'FAILED' || vResult.is_success === false);
+
+        if (isVerified) {
           if (vBanner) vBanner.className = "verification-banner v-banner-verified";
           if (vTitle) vTitle.textContent = "VERIFIED: PATIENT & ROOM RFID CONFIRMED";
           if (vDesc) vDesc.textContent = "Hardware interlock released. Medicine container unlocked for bedside delivery.";
           if (vCode) { vCode.textContent = "VERIFIED"; vCode.className = "badge"; }
           if (rfidBadge) { rfidBadge.textContent = "MATCHED (PASS)"; rfidBadge.className = "badge"; }
           if (roomBadge) { roomBadge.textContent = "MATCHED (PASS)"; roomBadge.className = "badge"; }
-        } else if (vResult && (vResult.status === 'MISMATCH' || vResult.status === 'FAIL')) {
+        } else if (isMismatch) {
           if (vBanner) vBanner.className = "verification-banner v-banner-mismatch";
           if (vTitle) vTitle.textContent = "⚠️ SAFETY LOCKOUT: PATIENT/ROOM MISMATCH";
           if (vDesc) vDesc.textContent = "Electronic latch LOCKED. Delivery halted to prevent medication error. Contact nursing station.";

@@ -54,7 +54,7 @@ class ClinicalService:
     def discharge_patient(db: Session, patient_id: int, current_user: User) -> Patient:
         patient = ClinicalService.get_patient_by_id(db, patient_id)
         patient.status = PatientStatusEnum.DISCHARGED
-        patient.discharge_date = datetime.datetime.utcnow()
+        patient.discharge_date = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
 
         # Free bed
         if patient.bed_id:

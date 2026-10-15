@@ -30,7 +30,7 @@ CLINICAL_ROOM_GOALS: Dict[str, Tuple[float, float, float, float, str]] = {
     "OT-01":   (-39.0, 26.0, 0.0, math.pi / 2.0, "Operating Theater 1 Prep Zone"),
     "OT-02":   (-30.0, 26.0, 0.0, math.pi / 2.0, "Operating Theater 2 Prep Zone"),
     "RAD-01":  (-15.5, 26.0, 0.0, math.pi / 2.0, "Radiology Control Console"),
-    "LAB-01":  (-0.5, 26.0, 0.0, math.pi / 2.0, "Laboratory Sample Drop Counter"),
+    "LAB-01":  (-0.5, 23.5, 0.0, math.pi / 2.0, "Laboratory Sample Drop Counter"),
     "PHM-01":  (14.0, 23.2, 0.0, math.pi / 2.0, "Pharmacy Dispensing Counter"),
     "ROB-01":  (14.0, 23.2, 0.0, math.pi / 2.0, "Robot Medicine Pickup Station"),
     "STR-01":  (25.75, 26.0, 0.0, math.pi / 2.0, "Medicine Storage Staging"),
@@ -256,3 +256,34 @@ def validate_navigation_goal(
     gx, gy, gz, _, desc = CLINICAL_ROOM_GOALS["PHM-01"]
     msg = f"Unknown destination '{dest_room_id}', defaulting to validated Pharmacy goal ({gx:.2f}, {gy:.2f})"
     return np.array([gx, gy, gz]), False, msg
+
+
+class GoalValidator:
+    """Class wrapper providing goal validation services for hospital navigation."""
+
+    @staticmethod
+    def validate(
+        dest_room_id: str,
+        hospital_env: Any = None,
+        collision_guard: Any = None,
+        robot_radius: float = 0.32,
+    ) -> Tuple[np.ndarray, bool, str]:
+        return validate_navigation_goal(dest_room_id, hospital_env, collision_guard, robot_radius)
+
+    @staticmethod
+    def is_collision_free(
+        x: float,
+        y: float,
+        collision_guard: Any = None,
+        margin: float = 0.32,
+    ) -> bool:
+        return is_position_collision_free(x, y, collision_guard, margin)
+
+    @staticmethod
+    def find_nearest_valid(
+        center_xy: Tuple[float, float],
+        room_bounds: Optional[Tuple[float, float, float, float]],
+        collision_guard: Any = None,
+        robot_radius: float = 0.32,
+    ) -> Tuple[float, float]:
+        return find_nearest_valid_goal(center_xy, room_bounds, collision_guard, robot_radius)

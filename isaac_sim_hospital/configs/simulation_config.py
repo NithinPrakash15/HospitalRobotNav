@@ -15,35 +15,103 @@ from __future__ import annotations
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Application Launch Settings (passed to SimulationApp constructor)
+# Quality Profiles (Phase 2 Performance Optimization)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def get_app_config(headless: bool = False) -> dict:
+QUALITY_PROFILES = {
+    "performance": {
+        "description": "High-throughput profile for resource-constrained systems (maximum FPS)",
+        "width": 1024,
+        "height": 576,
+        "window_width": 1280,
+        "window_height": 720,
+        "anti_aliasing": 0,
+        "renderer": "RayTracedLighting",
+        "max_bounces": 0,
+        "max_specular_transmission_bounces": 0,
+        "denoiser": False,
+        "subdiv_refinement_level": 0,
+        "sensor_update_hz": 8.0,
+        "dashboard_update_hz": 4.0,
+        "ros2_publish_hz": 8.0,
+    },
+    "balanced": {
+        "description": "Balanced default profile for RTX 4050 6GB (fluid 30-60 FPS, crisp visuals)",
+        "width": 1280,
+        "height": 720,
+        "window_width": 1440,
+        "window_height": 900,
+        "anti_aliasing": 0,
+        "renderer": "RayTracedLighting",
+        "max_bounces": 1,
+        "max_specular_transmission_bounces": 0,
+        "denoiser": True,
+        "subdiv_refinement_level": 0,
+        "sensor_update_hz": 10.0,
+        "dashboard_update_hz": 8.0,
+        "ros2_publish_hz": 10.0,
+    },
+    "quality": {
+        "description": "Fidelity-focused profile for high-end GPUs / presentation recordings",
+        "width": 1600,
+        "height": 900,
+        "window_width": 1680,
+        "window_height": 1050,
+        "anti_aliasing": 1,
+        "renderer": "RayTracedLighting",
+        "max_bounces": 2,
+        "max_specular_transmission_bounces": 1,
+        "denoiser": True,
+        "subdiv_refinement_level": 1,
+        "sensor_update_hz": 15.0,
+        "dashboard_update_hz": 12.0,
+        "ros2_publish_hz": 15.0,
+    },
+}
+
+ACTIVE_PROFILE_NAME = "balanced"
+
+
+def get_app_config(headless: bool = False, profile: str = "balanced") -> dict:
     """Return SimulationApp configuration optimized for RTX 4050 Laptop.
 
     Args:
         headless: If True, run without GUI (for automated testing).
+        profile: 'performance', 'balanced' (default), or 'quality'.
 
     Returns:
         Configuration dict for SimulationApp().
     """
+    global ACTIVE_PROFILE_NAME
+    p_name = profile.lower() if profile.lower() in QUALITY_PROFILES else "balanced"
+    ACTIVE_PROFILE_NAME = p_name
+    prof = QUALITY_PROFILES[p_name]
+
+    # Dynamically apply frequency throttles to AROGYA_FEATURES
+    AROGYA_FEATURES["sensor_update_hz"] = prof.get("sensor_update_hz", 10.0)
+    AROGYA_FEATURES["dashboard_update_hz"] = prof.get("dashboard_update_hz", 8.0)
+    AROGYA_FEATURES["ros2_publish_hz"] = prof.get("ros2_publish_hz", 10.0)
+
     return {
         "headless": headless,
-        "width": 1280,
-        "height": 720,
+        "hide_ui": False,
+        "width": prof["width"],
+        "height": prof["height"],
+        "window_width": prof["window_width"],
+        "window_height": prof["window_height"],
         "multi_gpu": False,
         "active_gpu": 0,
         "physics_gpu": 0,
         "extra_args": [
-            "--/app/vulkan=false",
             "--/renderer/multiGpu/enabled=false",
+            "--/app/fastShutdown=true",
         ],
-        "anti_aliasing": 0,           # Disable AA to save VRAM
-        "renderer": "RayTracedLighting",  # RTX Real-Time (not PathTracing)
-        "max_bounces": 1,             # Minimal ray bounces
-        "max_specular_transmission_bounces": 0,
-        "denoiser": True,             # Denoiser helps with fewer samples
-        "subdiv_refinement_level": 0, # No subdivision
+        "anti_aliasing": prof["anti_aliasing"],
+        "renderer": prof["renderer"],
+        "max_bounces": prof["max_bounces"],
+        "max_specular_transmission_bounces": prof["max_specular_transmission_bounces"],
+        "denoiser": prof["denoiser"],
+        "subdiv_refinement_level": prof["subdiv_refinement_level"],
     }
 
 
@@ -65,29 +133,29 @@ SIM_CONFIG = {
     "door_width_m": 1.2,             # 1.2 meter doorways
     "corridor_width_m": 2.5,         # 2.5 meter corridors
 
-    # Lighting (lightweight)
-    "distant_light_intensity": 500,
-    "point_light_intensity": 200,
+    # Lighting (balanced, non-glare)
+    "distant_light_intensity": 380,
+    "point_light_intensity": 160,
     "point_light_radius": 5.0,
 
     # Robot
     "robot_start_position": [0.0, 0.0, 0.0],
     "robot_max_speed_mps": 1.0,      # 1 m/s max speed
 
-    # Colours (RGB 0-1 float for USD materials) — Professional Hospital Palette
+    # Colours (RGB 0-1 float for USD materials) — Professional Hospital Palette (Restrained, High-Contrast)
     "colors": {
-        "floor":        (0.88, 0.89, 0.91),   # Medical Terrazzo grey
-        "wall":         (0.94, 0.95, 0.96),   # Architectural Off-White
-        "baseboard":    (0.22, 0.25, 0.28),   # Dark Slate kickplate
-        "atrium":       (0.92, 0.91, 0.88),   # Warm Porcelain Ivory
-        "corridor":     (0.88, 0.89, 0.91),   # Polished Terrazzo
-        "reception":    (0.42, 0.35, 0.28),   # Warm Wood & Slate
-        "pharmacy":     (0.92, 0.93, 0.94),   # Clean Clinical White
-        "patient_room": (0.92, 0.93, 0.94),   # Calming Pale Vinyl
-        "icu":          (0.91, 0.93, 0.95),   # Clinical Ice-White
-        "emergency":    (0.91, 0.91, 0.93),   # Clean Trauma Vinyl
-        "door":         (0.35, 0.38, 0.42),   # Architectural Steel
-        "charging_pad": (0.00, 0.90, 1.00),   # Glowing Tech Cyan
+        "floor":        (0.46, 0.50, 0.54),   # Medical Terrazzo foundation grey
+        "wall":         (0.76, 0.78, 0.82),   # Architectural Clinical light slate
+        "baseboard":    (0.16, 0.18, 0.22),   # Dark Slate kickplate
+        "atrium":       (0.58, 0.56, 0.52),   # Warm Porcelain tile
+        "corridor":     (0.52, 0.56, 0.60),   # Distinct Navigation Concourse
+        "reception":    (0.50, 0.54, 0.52),   # Muted Sage & Slate
+        "pharmacy":     (0.42, 0.58, 0.52),   # Clean Clinical Mint
+        "patient_room": (0.50, 0.54, 0.56),   # Calming Surgical Pale Vinyl
+        "icu":          (0.42, 0.50, 0.62),   # Clinical Ice Blue
+        "emergency":    (0.60, 0.45, 0.45),   # Clean Trauma Vinyl
+        "door":         (0.32, 0.35, 0.38),   # Architectural Steel
+        "charging_pad": (0.00, 0.85, 1.00),   # Tech Cyan
     },
 }
 
