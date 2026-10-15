@@ -28,3 +28,7 @@ data/*.db-wal
 # Temporary and archived scratch files
 archive/
 scratch/
+
+# Generated PDF deliverables and PDF generation scripts
+*.pdf
+scripts/
